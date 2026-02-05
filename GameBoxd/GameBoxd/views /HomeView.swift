@@ -14,8 +14,21 @@ struct HomeView: View {
         
         ZStack {
             AppBackground{
-                Text("Home")
-                    .foregroundStyle(Color(.white))
+                
+                VStack{
+                    Text("Home")
+                        .foregroundStyle(Color(.white))
+                    
+                }
+               
+                
+                VStack(spacing: 16) {
+                   
+                    PrimaryButton(title: "Get Started") { }
+                    PrimaryButton(title: "Longer Title to Test Layout") { }
+                }
+                .padding()
+              
                 
             }
         }

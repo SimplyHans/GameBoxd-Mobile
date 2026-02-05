@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PrimaryButton: View {
+struct SeconderyButton: View {
     let title: String
     let action: () -> Void
 
@@ -13,8 +13,8 @@ struct PrimaryButton: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color.purple,
-                            Color.blue
+                            Color.black,
+                            Color.gray
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -32,9 +32,9 @@ struct PrimaryButton: View {
 #Preview("PrimaryButton Variants") {
     VStack(spacing: 16) {
        
-        PrimaryButton(title: "Get Started") { }
-        PrimaryButton(title: "Login") { }
+        SeconderyButton(title: "Cancel") { }
+        SeconderyButton(title: "Back") { }
     }
     .padding()
-    .background(Color(.systemBackground)) // or your AppBackground if desired
+    .background(Color(.systemBackground))
 }
