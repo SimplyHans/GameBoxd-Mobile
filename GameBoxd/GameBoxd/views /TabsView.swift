@@ -8,16 +8,18 @@ struct TabsView: View {
             AppBackground{
                 
                 TabView {
+                    
+                    
                     HomeView()
                         .tabItem {
                             Label("Home", systemImage: "house")
                         }
-
+                    
                     ProfileView()
                         .tabItem {
                             Label("Profile", systemImage: "person")
                         }
-
+                    
                     SearchView()
                         .tabItem {
                             Label("Search", systemImage: "magnifyingglass")
@@ -26,13 +28,22 @@ struct TabsView: View {
                         .tabItem {
                             Label("Log", systemImage: "arrow.2.circlepath.circle")
                         }
+                    
+                    FeedView()
+                        .tabItem {
+                            Label("Feed", systemImage: "square.stack")
+                        }
+                }
+                            
+                        
+                    
                 }
                 
             }
         }
         
     }
-}
+
 
 
 
