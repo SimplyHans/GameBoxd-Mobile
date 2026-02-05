@@ -14,9 +14,49 @@ struct SearchView: View {
             
             AppBackground{
                 
-                Text("Searvh View")
+                ScrollView(.vertical, showsIndicators: false){
+                    
+                    VStack{
+                        
+                        CardView(){
+                            Image("Image")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 400, height: 200)
+                        }
+                        
+                        CardView(){
+                            Image("Image")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 400, height: 200)
+                        }
+                        CardView(){
+                            Image("Image")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 400, height: 200)
+                        }
+                        CardView(){
+                            Image("Image")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 400, height: 200)
+                        }
+                        CardView(){
+                            Image("Image")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 400, height: 200)
+                        }
+                    }
+                }
                 
             }
         }
     }
+}
+
+#Preview {
+    SearchView()
 }

@@ -10,22 +10,36 @@ import SwiftUI
 
 struct HomeView: View {
     
+    @State var String: String = ""
+    
     var body: some View {
         
         ZStack {
             AppBackground{
                 
-                VStack{
-                    Text("Home")
-                        .foregroundStyle(Color(.white))
-                    
-                }
+               
                
                 
                 VStack(spacing: 16) {
                    
                     PrimaryButton(title: "Get Started") { }
-                    PrimaryButton(title: "Longer Title to Test Layout") { }
+                    SeconderyButton(title: "Cancel") {}
+                    DeleteButton(title: "Delete") { }
+                    AppTextField(placeholder: "Email", text:$String)
+                    
+                    CardView(){
+                        
+                        
+                          
+                        
+                        AppTextField(placeholder: "Email", text:$String)
+                        
+                        PrimaryButton(title: "Get Started") { }
+                    }
+                    
+                    
+                    
+                    
                 }
                 .padding()
               
@@ -36,4 +50,9 @@ struct HomeView: View {
         
     }
     
+}
+
+#Preview {
+    HomeView()
+   
 }
