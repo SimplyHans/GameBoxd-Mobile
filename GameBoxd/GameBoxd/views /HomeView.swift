@@ -1,375 +1,180 @@
-//
-//  HomeView.swift
-//  GameBoxd
-//
-//  Created by Hussein on 2026-02-05.
-//
-
 import Foundation
 import SwiftUI
 
 struct HomeView: View {
-    
-   @State private var userName:String = "Hanson"
-    @State private var gameName:String = "Fortnit"
-    
-    
+    @State private var userName: String = "Hanson"
+
     var body: some View {
-        
         ZStack {
-            AppBackground{
-                
-               
-                
-                ScrollView(.vertical){
-                    
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        
-                        Text("Welcom Back, " + userName)
-                            .foregroundStyle(Color(.white))
-                            .font(Font.title.bold())
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-
-                        Text("Featured Game")
-                            .foregroundStyle(Color(.white))
-                            .font(Font.title2.bold())
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                        
-                        
-                        GeometryReader { proxy in
-                            ZStack {
-                                CardView() {
-                                    Image("Image")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .clipped()
-                                }
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
+            AppBackground {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Header
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Welcome back,")
+                                    .foregroundStyle(.white.opacity(0.8))
+                                    .font(.subheadline)
+                                Text(userName)
+                                    .foregroundStyle(.white)
+                                    .font(.largeTitle.weight(.bold))
+                            }
+                            Spacer()
+                            HStack(spacing: 12) {
+                                Circle()
+                                    .fill(Color.black.opacity(0.25))
+                                    .frame(width: 36, height: 36)
+                                    .overlay(
+                                        Image(systemName: "bell")
+                                            .foregroundStyle(.white)
+                                    )
+                                    .overlay(
+                                        Circle().stroke(
                                             LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                            lineWidth: 3
+                                            lineWidth: 1
                                         )
-                                )
-                                
+                                    )
+                                Circle()
+                                    .fill(Color.black.opacity(0.25))
+                                    .frame(width: 36, height: 36)
+                                    .overlay(
+                                        Image(systemName: "gearshape")
+                                            .foregroundStyle(.white)
+                                    )
+                                    .overlay(
+                                        Circle().stroke(
+                                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                            lineWidth: 1
+                                        )
+                                    )
                             }
-                                
                         }
-                        .frame(height: 220)
-                        .padding(.horizontal)
-                        
-                        
-                        
-                                
-                        
-                        Text("Treding")
-                            .foregroundStyle(Color(.white))
-                            .font(Font.title2.bold())
-                            .padding(.top, 20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                        // Featured Hero
+                        FeaturedHero(imageName: "Image")
                             .padding(.horizontal, 16)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            
-                            
-                            HStack(spacing: 16) {
-                                ZStack {
-                                    CardView() {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                                ZStack {
-                                    CardView {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                                ZStack {
-                                    CardView() {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-                                        
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                            }
-                            .frame( height:140)
-                            .padding(.horizontal)
-                            
-                            
-                            
-                            
-                        }
-                        
-                        
-                        Text("Recommended")
-                            .foregroundStyle(Color(.white))
-                            .font(Font.title2.bold())
-                            .padding(.top, 20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        // Sections
+                        SectionHeader(title: "Trending")
                             .padding(.horizontal, 16)
+                        HorizontalGamesRow(items: demoGames)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            
-                            
-                            HStack(spacing: 16) {
-                                ZStack {
-                                    CardView() {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                                ZStack {
-                                    CardView {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                                ZStack {
-                                    CardView() {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-                                        
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                            }
-                            .frame( height:140)
-                            .padding(.horizontal)
-                            
-                            
-                            
-                            
-                        }
-                        
-                        
-                        Text("Recently played")
-                            .foregroundStyle(Color(.white))
-                            .font(Font.title2.bold())
-                            .padding(.top, 20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        SectionHeader(title: "Recommended")
                             .padding(.horizontal, 16)
+                        HorizontalGamesRow(items: demoGames.shuffled())
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            
-                            
-                            HStack(spacing: 16) {
-                                ZStack {
-                                    CardView() {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
+                        SectionHeader(title: "Recently Played")
+                            .padding(.horizontal, 16)
+                        HorizontalGamesRow(items: demoGames.shuffled())
 
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                                ZStack {
-                                    CardView {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                                ZStack {
-                                    CardView() {
-                                        Image("Image")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .clipped()
-                                    }
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 3
-                                            )
-                                    )
-                                        
-                                    Text(gameName)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                }
-                                .frame(width: 180, height: 140)
-                                .padding(.horizontal, 20)
-                                
-                            }
-                            .frame( height:140)
-                            .padding(.horizontal)
-                            
-                            
-                            
-                            
-                        }
-                            
-                        
-                        
+                        Spacer(minLength: 24)
                     }
-                    
-                    
                 }
-               
-                
-                
-                }
-            
-                
-                
-             
-              
-                
             }
-        
-        
-        
+        }
     }
-    
 }
+
+// MARK: - Components
+struct SectionHeader: View {
+    let title: String
+    var body: some View {
+        HStack {
+            Text(title)
+                .foregroundStyle(.white)
+                .font(.title2.weight(.bold))
+            Spacer()
+            Button {
+                // TODO: See all action
+            } label: {
+                Text("See all")
+                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.subheadline.weight(.medium))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+struct FeaturedHero: View {
+    let imageName: String
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 200)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(
+                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 2
+                        )
+                )
+        }
+    }
+}
+
+struct HorizontalGamesRow: View {
+    let items: [GameItem]
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 16) {
+                ForEach(items) { item in
+                    GameCard(title: item.title, imageName: item.imageName)
+                        .frame(width: 130)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+}
+
+struct GameCard: View {
+    let title: String
+    let imageName: String
+    var body: some View {
+        VStack(alignment: .center, spacing: 8) {
+            Image(imageName)
+                .resizable()
+                .aspectRatio(3/4, contentMode: .fill)
+                .frame(height: 160)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(
+                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 2
+                        )
+                )
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+        }
+    }
+}
+
+struct GameItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let imageName: String
+}
+
+private let demoGames: [GameItem] = [
+    GameItem(title: "Fortnit", imageName: "Image"),
+    GameItem(title: "Apex Legends", imageName: "Image"),
+    GameItem(title: "Valorant", imageName: "Image"),
+    GameItem(title: "Overwatch 2", imageName: "Image"),
+    GameItem(title: "Rocket League", imageName: "Image")
+]
 
 #Preview {
     HomeView()
-   
 }
 
