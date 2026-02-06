@@ -29,12 +29,13 @@ struct SeconderyButton: View {
     
 }
 
-#Preview("PrimaryButton Variants") {
-    VStack(spacing: 16) {
-       
-        SeconderyButton(title: "Cancel") { }
-        SeconderyButton(title: "Back") { }
+struct SeconderyButton_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 16) {
+            SeconderyButton(title: "Cancel") { }
+            SeconderyButton(title: "Back") { }
+        }
+        .padding()
+        .background(Color(.systemBackground))
     }
-    .padding()
-    .background(Color(.systemBackground))
 }

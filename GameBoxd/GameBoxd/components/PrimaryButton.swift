@@ -29,12 +29,13 @@ struct PrimaryButton: View {
     
 }
 
-#Preview("PrimaryButton Variants") {
-    VStack(spacing: 16) {
-       
-        PrimaryButton(title: "Get Started") { }
-        PrimaryButton(title: "Login") { }
+struct PrimaryButton_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 16) {
+            PrimaryButton(title: "Get Started") { }
+            PrimaryButton(title: "Login") { }
+        }
+        .padding()
+        .background(Color(.systemBackground))
     }
-    .padding()
-    .background(Color(.systemBackground)) // or your AppBackground if desired
 }

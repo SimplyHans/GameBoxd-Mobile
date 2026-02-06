@@ -28,12 +28,13 @@ struct DeleteButton: View {
     
 }
 
-#Preview("PrimaryButton Variants") {
-    VStack(spacing: 16) {
-       
-        DeleteButton(title: "Delete") { }
-        DeleteButton(title: "Remove") { }
+struct DeleteButton_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 16) {
+            DeleteButton(title: "Delete") { }
+            DeleteButton(title: "Remove") { }
+        }
+        .padding()
+        .background(Color(.systemBackground))
     }
-    .padding()
-    .background(Color(.systemBackground)) // or your AppBackground if desired
 }
