@@ -179,9 +179,9 @@ struct GameItem: Identifiable {
 }
 
 private let demoGames: [GameItem] = [
-    GameItem(title: "Fortnit", imageName: "Image"),
-    GameItem(title: "Apex Legends", imageName: "Image"),
-    GameItem(title: "Valorant", imageName: "Image"),
+    GameItem(title: "Minecraft", imageName: "minecraft"),
+    GameItem(title: "Doom", imageName: "doom"),
+    GameItem(title: "Fortnite", imageName: "Image"),
     GameItem(title: "Overwatch 2", imageName: "Image"),
     GameItem(title: "Rocket League", imageName: "Image")
 ]
