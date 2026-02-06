@@ -14,6 +14,7 @@
 		D79191922F35390100D3F123 /* DeleteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79191912F35390100D3F123 /* DeleteButton.swift */; };
 		D79191942F35390100D3F123 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79191932F35390100D3F123 /* PrimaryButton.swift */; };
 		D79191962F35390100D3F123 /* SeconderyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79191952F35390100D3F123 /* SeconderyButton.swift */; };
+		D79191992F35390100D3F123 /* TabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D791919A2F35390100D3F123 /* TabsView.swift */; };
 		D79191982F35390100D3F123 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D79191972F35390100D3F123 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -26,6 +27,7 @@
 		D79191912F35390100D3F123 /* DeleteButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteButton.swift; sourceTree = "<group>"; };
 		D79191932F35390100D3F123 /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
 		D79191952F35390100D3F123 /* SeconderyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeconderyButton.swift; sourceTree = "<group>"; };
+		D791919A2F35390100D3F123 /* TabsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsView.swift; sourceTree = "<group>"; };
 		D79191972F35390100D3F123 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,13 +62,14 @@
 			isa = PBXGroup;
 			children = (
 				D79191892F35390100D3F123 /* GameBoxdApp.swift */,
-				D791919A2F35390100D3F123 /* components */,
+				D791919A2F35390100D3F123 /* TabsView.swift */,
+				D791919B2F35390100D3F123 /* components */,
 				D79191972F35390100D3F123 /* Assets.xcassets */,
 			);
 			path = GameBoxd;
 			sourceTree = "<group>";
 		};
-		D791919A2F35390100D3F123 /* components */ = {
+		D791919B2F35390100D3F123 /* components */ = {
 			isa = PBXGroup;
 			children = (
 				D791918B2F35390100D3F123 /* AppBackground.swift */,
@@ -152,6 +155,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D791918A2F35390100D3F123 /* GameBoxdApp.swift in Sources */,
+				D79191992F35390100D3F123 /* TabsView.swift in Sources */,
 				D791918C2F35390100D3F123 /* AppBackground.swift in Sources */,
 				D791918E2F35390100D3F123 /* AppTextField.swift in Sources */,
 				D79191902F35390100D3F123 /* CardView.swift in Sources */,

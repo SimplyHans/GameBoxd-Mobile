@@ -13,8 +13,7 @@ struct SeconderyButton: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color.sbc
-
+                            Color("sbc")
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
