@@ -10,7 +10,8 @@ import SwiftUI
 
 struct HomeView: View {
     
-    @State var String: String = ""
+    @State var  EmailField = ""
+    @State var  PasswordField = ""
     
     var body: some View {
         
@@ -20,28 +21,49 @@ struct HomeView: View {
                
                
                 
-                VStack(spacing: 16) {
-                   
-                    PrimaryButton(title: "Get Started") { }
-                    SeconderyButton(title: "Cancel") {}
-                    DeleteButton(title: "Delete") { }
-                    AppTextField(placeholder: "Email", text:$String)
+            
+                VStack{
+                    Spacer()
+                    Spacer()
                     
-                    CardView(){
-                        
-                        
-                          
-                        
-                        AppTextField(placeholder: "Email", text:$String)
-                        
-                        PrimaryButton(title: "Get Started") { }
+                    HStack{
+                        Text("Email")
+                            .foregroundStyle(.white)
+                            .font(.title2)
+                        Spacer()
                     }
+                
+                    AppTextField(placeholder: "Email", text:$EmailField)
+                    
+                        
+                    
+                    HStack{
+                        Text("Password")
+                            .foregroundStyle(.white)
+                            .font(.title2)
+                        Spacer()
+                    }
+                
+                    AppTextField(placeholder: "Password", text:$PasswordField)
+                        .padding(.bottom, 30)
                     
                     
+                    
+                    PrimaryButton(title: "Login") {}
+                    
+                    ButtonWithNoBackGround(title: "Create an account") {
+                        
+                    }
+                        
+                    Spacer()
+                    Spacer()
                     
                     
                 }
                 .padding()
+                
+                
+             
               
                 
             }
