@@ -4,36 +4,66 @@ struct SettingsView: View {
     @State private var notificationsEnabled: Bool = true
     @State private var darkModeEnabled: Bool = true
     @State private var autoPlayVideos: Bool = false
+    @State private var showAbout: Bool = false
 
     var body: some View {
-        ZStack {
-            AppBackground {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Settings")
-                            .foregroundStyle(.white)
-                            .font(.largeTitle.weight(.bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+        NavigationStack {
+            ZStack {
+                AppBackground {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Settings")
+                                .foregroundStyle(.white)
+                                .font(.largeTitle.weight(.bold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 8)
+
+                            SettingsSection(title: "Preferences") {
+                                SettingsToggleRow(title: "Enable Notifications", isOn: $notificationsEnabled)
+                                SettingsToggleRow(title: "Dark Mode", isOn: $darkModeEnabled)
+                                SettingsToggleRow(title: "Autoplay Videos", isOn: $autoPlayVideos)
+                            }
                             .padding(.horizontal, 16)
-                            .padding(.top, 8)
 
-                        SettingsSection(title: "Preferences") {
-                            SettingsToggleRow(title: "Enable Notifications", isOn: $notificationsEnabled)
-                            SettingsToggleRow(title: "Dark Mode", isOn: $darkModeEnabled)
-                            SettingsToggleRow(title: "Autoplay Videos", isOn: $autoPlayVideos)
+                            SettingsSection(title: "Account") {
+                                NavigationLink {
+                                    EditProfileView(currentUsername: "Hanson", currentBio: "Gamer. Competitive.") { _, _ in }
+                                } label: {
+                                    SettingsNavRow(title: "Edit Profile", systemImage: "person.circle")
+                                }
+                                SettingsNavRow(title: "Privacy", systemImage: "lock.shield")
+                                Button {
+                                    showAbout = true
+                                } label: {
+                                    SettingsNavRow(title: "About", systemImage: "info.circle")
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 16)
+
+                            Spacer(minLength: 24)
                         }
-                        .padding(.horizontal, 16)
-
-                        SettingsSection(title: "Account") {
-                            SettingsNavRow(title: "Edit Profile", systemImage: "person.circle")
-                            SettingsNavRow(title: "Privacy", systemImage: "lock.shield")
-                            SettingsNavRow(title: "About", systemImage: "info.circle")
-                        }
-                        .padding(.horizontal, 16)
-
-                        Spacer(minLength: 24)
                     }
                 }
+            }
+            .sheet(isPresented: $showAbout) {
+                ZStack {
+                    AppBackground {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("About GameBoxd")
+                                .foregroundStyle(Color.white)
+                                .font(.title.weight(.bold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text("GameBoxd is your hub for tracking games, sharing highlights, and discovering what to play next.")
+                                .foregroundStyle(Color.white.opacity(0.85))
+                                .font(.body)
+                            Spacer()
+                        }
+                        .padding(20)
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
         }
     }

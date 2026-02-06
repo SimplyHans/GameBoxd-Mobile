@@ -5,71 +5,83 @@ struct HomeView: View {
     @State private var userName: String = "Hanson"
 
     var body: some View {
-        ZStack {
-            AppBackground {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // Header
-                        HStack(alignment: .center) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Welcome back,")
-                                    .foregroundStyle(.white.opacity(0.8))
-                                    .font(.subheadline)
-                                Text(userName)
-                                    .foregroundStyle(.white)
-                                    .font(.largeTitle.weight(.bold))
+        NavigationStack {
+            ZStack {
+                AppBackground {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Header
+                            HStack(alignment: .center) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Welcome back,")
+                                        .foregroundStyle(.white.opacity(0.8))
+                                        .font(.subheadline)
+                                    Text(userName)
+                                        .foregroundStyle(.white)
+                                        .font(.largeTitle.weight(.bold))
+                                }
+                                Spacer()
+                                HStack(spacing: 12) {
+                                    NavigationLink {
+                                        NotificationsView()
+                                    } label: {
+                                        Circle()
+                                            .fill(Color.black.opacity(0.25))
+                                            .frame(width: 36, height: 36)
+                                            .overlay(
+                                                Image(systemName: "bell")
+                                                    .foregroundStyle(.white)
+                                            )
+                                            .overlay(
+                                                Circle().stroke(
+                                                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                                    lineWidth: 1
+                                                )
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                    NavigationLink {
+                                        SettingsView()
+                                    } label: {
+                                        Circle()
+                                            .fill(Color.black.opacity(0.25))
+                                            .frame(width: 36, height: 36)
+                                            .overlay(
+                                                Image(systemName: "gearshape")
+                                                    .foregroundStyle(.white)
+                                            )
+                                            .overlay(
+                                                Circle().stroke(
+                                                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                                    lineWidth: 1
+                                                )
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
-                            Spacer()
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(Color.black.opacity(0.25))
-                                    .frame(width: 36, height: 36)
-                                    .overlay(
-                                        Image(systemName: "bell")
-                                            .foregroundStyle(.white)
-                                    )
-                                    .overlay(
-                                        Circle().stroke(
-                                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                            lineWidth: 1
-                                        )
-                                    )
-                                Circle()
-                                    .fill(Color.black.opacity(0.25))
-                                    .frame(width: 36, height: 36)
-                                    .overlay(
-                                        Image(systemName: "gearshape")
-                                            .foregroundStyle(.white)
-                                    )
-                                    .overlay(
-                                        Circle().stroke(
-                                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                            lineWidth: 1
-                                        )
-                                    )
-                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+
+                            // Featured Hero
+                            FeaturedHero(imageName: "Image")
+                                .padding(.horizontal, 16)
+
+                            // Sections
+                            SectionHeader(title: "Trending")
+                                .padding(.horizontal, 16)
+                            HorizontalGamesRow(items: demoGames)
+
+                            SectionHeader(title: "Recommended")
+                                .padding(.horizontal, 16)
+                            HorizontalGamesRow(items: demoGames.shuffled())
+
+                            SectionHeader(title: "Recently Played")
+                                .padding(.horizontal, 16)
+                            HorizontalGamesRow(items: demoGames.shuffled())
+
+                            Spacer(minLength: 24)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                        // Featured Hero
-                        FeaturedHero(imageName: "Image")
-                            .padding(.horizontal, 16)
-
-                        // Sections
-                        SectionHeader(title: "Trending")
-                            .padding(.horizontal, 16)
-                        HorizontalGamesRow(items: demoGames)
-
-                        SectionHeader(title: "Recommended")
-                            .padding(.horizontal, 16)
-                        HorizontalGamesRow(items: demoGames.shuffled())
-
-                        SectionHeader(title: "Recently Played")
-                            .padding(.horizontal, 16)
-                        HorizontalGamesRow(items: demoGames.shuffled())
-
-                        Spacer(minLength: 24)
                     }
                 }
             }

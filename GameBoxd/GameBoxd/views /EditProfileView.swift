@@ -48,6 +48,8 @@ struct EditProfileView: View {
                                 TextEditor(text: $bio)
                                     .foregroundStyle(.white)
                                     .frame(minHeight: 120)
+                                    .scrollContentBackground(.hidden)
+                                    .background(Color.clear)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -92,7 +94,7 @@ private struct ProfileFieldBackground<Content: View>: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.black.opacity(0.25))
+                    .fill(Color.clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
