@@ -27,9 +27,7 @@ final class AuthViewModel: ObservableObject {
 
     func register(username: String, email: String, password: String, completion: (() -> Void)? = nil) {
         Task {
-            await performAuthAction({
-                try await self.service.register(username: username, email: email, password: password)
-            }, completion: completion)
+            await performRegister(username: username, email: email, password: password, completion: completion)
         }
     }
 
@@ -56,6 +54,23 @@ final class AuthViewModel: ObservableObject {
                 errorMessage = AuthError.unknown.localizedDescription
             }
             isAuthenticated = false
+        }
+        isLoading = false
+    }
+
+    private func performRegister(username: String, email: String, password: String, completion: (() -> Void)? = nil) async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            _ = try await service.register(username: username, email: email, password: password)
+            // Do NOT mark as authenticated here – user should go back to Login
+            completion?()
+        } catch {
+            if let authError = error as? AuthError {
+                errorMessage = authError.localizedDescription
+            } else {
+                errorMessage = AuthError.unknown.localizedDescription
+            }
         }
         isLoading = false
     }
