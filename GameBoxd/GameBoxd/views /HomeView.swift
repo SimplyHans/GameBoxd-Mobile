@@ -5,37 +5,42 @@ struct HomeView: View {
     @EnvironmentObject private var authViewModel: AuthViewModel
     @StateObject private var homeViewModel = HomeViewModel()
     @State private var selectedSection: HomeSection?
+    @State private var isShowingNotifications = false
+    @State private var isShowingSettings = false
 
     var body: some View {
         NavigationStack {
             AppBackground {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        header
+                VStack(spacing: 0) {
+                    header
+                        .zIndex(1)
 
-                        if let featuredGame = homeViewModel.featuredGame {
-                            FeaturedHero(game: featuredGame) {
-                                homeViewModel.selectedGame = featuredGame
-                            }
-                            .padding(.horizontal, 16)
-                        }
-
-                        ForEach(homeViewModel.sections) { section in
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(
-                                    title: section.title,
-                                    subtitle: section.subtitle,
-                                    action: { selectedSection = section }
-                                )
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            if let featuredGame = homeViewModel.featuredGame {
+                                FeaturedHero(game: featuredGame) {
+                                    homeViewModel.selectedGame = featuredGame
+                                }
                                 .padding(.horizontal, 16)
+                            }
 
-                                HorizontalGamesRow(items: section.items) { game in
-                                    homeViewModel.selectedGame = game
+                            ForEach(homeViewModel.sections) { section in
+                                VStack(alignment: .leading, spacing: 12) {
+                                    SectionHeader(
+                                        title: section.title,
+                                        subtitle: section.subtitle,
+                                        action: { selectedSection = section }
+                                    )
+                                    .padding(.horizontal, 16)
+
+                                    HorizontalGamesRow(items: section.items) { game in
+                                        homeViewModel.selectedGame = game
+                                    }
                                 }
                             }
-                        }
 
-                        Spacer(minLength: 24)
+                            Spacer(minLength: 24)
+                        }
                     }
                 }
             }
@@ -66,6 +71,12 @@ struct HomeView: View {
                     }
                 }
             }
+            .sheet(isPresented: $isShowingNotifications) {
+                NotificationsView()
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView()
+            }
         }
     }
 
@@ -88,15 +99,15 @@ struct HomeView: View {
             Spacer()
 
             HStack(spacing: 12) {
-                NavigationLink {
-                    NotificationsView()
+                Button {
+                    isShowingNotifications = true
                 } label: {
                     HeaderIcon(systemName: "bell", badgeCount: homeViewModel.notificationCount)
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink {
-                    SettingsView()
+                Button {
+                    isShowingSettings = true
                 } label: {
                     HeaderIcon(systemName: "gearshape", badgeCount: 0)
                 }
