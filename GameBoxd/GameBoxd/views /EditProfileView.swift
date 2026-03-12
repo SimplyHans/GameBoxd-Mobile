@@ -5,12 +5,14 @@ struct EditProfileView: View {
 
     @State private var username: String
     @State private var bio: String
+    @State private var about: String
 
-    var onSave: (String, String) -> Void
+    var onSave: (String, String, String) -> Void
 
-    init(currentUsername: String, currentBio: String, onSave: @escaping (String, String) -> Void) {
+    init(currentUsername: String, currentBio: String, currentAbout: String, onSave: @escaping (String, String, String) -> Void) {
         _username = State(initialValue: currentUsername)
         _bio = State(initialValue: currentBio)
+        _about = State(initialValue: currentAbout)
         self.onSave = onSave
     }
 
@@ -19,7 +21,6 @@ struct EditProfileView: View {
             AppBackground {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        // Header
                         Text("Edit Profile")
                             .foregroundStyle(.white)
                             .font(.largeTitle.weight(.bold))
@@ -27,7 +28,7 @@ struct EditProfileView: View {
                             .padding(.horizontal, 16)
                             .padding(.top, 8)
 
-                        // Form fields
+                        // Username
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Username")
                                 .foregroundStyle(.white.opacity(0.9))
@@ -40,12 +41,28 @@ struct EditProfileView: View {
                         }
                         .padding(.horizontal, 16)
 
+                        // Bio
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Bio")
                                 .foregroundStyle(.white.opacity(0.9))
                                 .font(.headline)
                             ProfileFieldBackground {
                                 TextEditor(text: $bio)
+                                    .foregroundStyle(.white)
+                                    .frame(minHeight: 80)
+                                    .scrollContentBackground(.hidden)
+                                    .background(Color.clear)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+
+                        // About
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("About")
+                                .foregroundStyle(.white.opacity(0.9))
+                                .font(.headline)
+                            ProfileFieldBackground {
+                                TextEditor(text: $about)
                                     .foregroundStyle(.white)
                                     .frame(minHeight: 120)
                                     .scrollContentBackground(.hidden)
@@ -54,9 +71,9 @@ struct EditProfileView: View {
                         }
                         .padding(.horizontal, 16)
 
-                        // Save button
+                        // Save
                         Button {
-                            onSave(username, bio)
+                            onSave(username, bio, about)
                             dismiss()
                         } label: {
                             Text("Save")
@@ -108,6 +125,6 @@ private struct ProfileFieldBackground<Content: View>: View {
 
 #Preview {
     NavigationStack {
-        EditProfileView(currentUsername: "Hanson", currentBio: "Gamer. Competitive.") { _, _ in }
+        EditProfileView(currentUsername: "Hanson", currentBio: "Gamer. Competitive.", currentAbout: "Loves shooters and team games.") { _, _, _ in }
     }
 }

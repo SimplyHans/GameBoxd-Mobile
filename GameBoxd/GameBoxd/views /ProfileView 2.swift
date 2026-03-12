@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @State private var bio: String = "Gamer. Competitive. Always grinding."
+    @State private var about: String = "Loves shooters and team games. Looking for ranked squads on weekends."
 
     private var username: String {
         authVM.currentUser?.username ?? "Player"
@@ -14,6 +15,7 @@ struct ProfileView: View {
                 AppBackground {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
+
                             Text("Profile")
                                 .foregroundStyle(.white)
                                 .font(.largeTitle.weight(.bold))
@@ -58,8 +60,13 @@ struct ProfileView: View {
                             .padding(.horizontal, 16)
 
                             NavigationLink {
-                                EditProfileView(currentUsername: username, currentBio: bio) { newName, newBio in
+                                EditProfileView(
+                                    currentUsername: username,
+                                    currentBio: bio,
+                                    currentAbout: about
+                                ) { _, newBio, newAbout in
                                     self.bio = newBio
+                                    self.about = newAbout
                                 }
                             } label: {
                                 Text("Edit Profile")
@@ -82,7 +89,7 @@ struct ProfileView: View {
                             .padding(.horizontal, 16)
 
                             ProfileSectionCard(title: "About", alignment: .center) {
-                                Text("Loves shooters and team games. Looking for ranked squads on weekends.")
+                                Text(about)
                                     .foregroundStyle(.white.opacity(0.9))
                                     .font(.subheadline)
                                     .multilineTextAlignment(.center)
