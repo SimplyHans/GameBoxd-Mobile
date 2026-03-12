@@ -9,9 +9,27 @@ import SwiftUI
 
 @main
 struct GameBoxdApp: App {
+    @StateObject private var authViewModel = AuthViewModel()
+
     var body: some Scene {
         WindowGroup {
-            LoginView()
+            RootView()
+                .environmentObject(authViewModel)
         }
     }
 }
+
+private struct RootView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+
+    var body: some View {
+        Group {
+            if authViewModel.isAuthenticated {
+                TabsView()
+            } else {
+                LoginView()
+            }
+        }
+    }
+}
+

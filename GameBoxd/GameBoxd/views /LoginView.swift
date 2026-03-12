@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct LoginView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
     @State private var email: String = ""
     @State private var password: String = ""
-    @State private var goToHome = false
+    @State private var showAlert = false
 
     var body: some View {
         NavigationStack {
@@ -11,8 +12,6 @@ struct LoginView: View {
                 AppBackground {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
-                            NavigationLink(destination: TabsView(), isActive: $goToHome) { EmptyView() }
-                            
                             Text("Login")
                                 .foregroundStyle(.white)
                                 .font(.largeTitle.weight(.bold))
@@ -52,7 +51,10 @@ struct LoginView: View {
                             .padding(.horizontal, 16)
 
                             Button {
-                                goToHome = true
+                                authViewModel.login(email: email, password: password)
+                                if authViewModel.errorMessage != nil {
+                                    showAlert = true
+                                }
                             } label: {
                                 Text("Login")
                                     .font(.headline)
@@ -71,6 +73,8 @@ struct LoginView: View {
                                             )
                                     )
                             }
+                            .disabled(authViewModel.isLoading)
+                            .opacity(authViewModel.isLoading ? 0.6 : 1.0)
                             .padding(.horizontal, 16)
                             .padding(.top, 8)
 
@@ -90,6 +94,15 @@ struct LoginView: View {
                         }
                     }
                 }
+            }
+            .alert(isPresented: $showAlert) {
+                Alert(
+                    title: Text("Login Failed"),
+                    message: Text(authViewModel.errorMessage ?? "Please try again."),
+                    dismissButton: .default(Text("OK")) {
+                        showAlert = false
+                    }
+                )
             }
         }
     }

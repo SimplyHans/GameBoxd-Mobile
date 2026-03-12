@@ -5,12 +5,14 @@ struct RegisterPageView: View {
     @State private var username: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @State private var showAlert = false
 
     var body: some View {
         ZStack {
             AppBackground {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 16) {
                         Text("Register")
                             .foregroundStyle(.white)
                             .font(.largeTitle.weight(.bold))
@@ -66,8 +68,12 @@ struct RegisterPageView: View {
                         .padding(.horizontal, 16)
 
                         Button {
-                            // After successful registration, go back to Login
-                            dismiss()
+                            authViewModel.register(username: username, email: email, password: password) {
+                                dismiss()
+                            }
+                            if authViewModel.errorMessage != nil {
+                                showAlert = true
+                            }
                         } label: {
                             Text("Register")
                                 .font(.headline)
@@ -86,6 +92,8 @@ struct RegisterPageView: View {
                                         )
                                 )
                         }
+                        .disabled(authViewModel.isLoading)
+                        .opacity(authViewModel.isLoading ? 0.6 : 1.0)
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
@@ -104,6 +112,15 @@ struct RegisterPageView: View {
                         Spacer(minLength: 24)
                     }
                 }
+            }
+            .alert(isPresented: $showAlert) {
+                Alert(
+                    title: Text("Registration Failed"),
+                    message: Text(authViewModel.errorMessage ?? "Please try again."),
+                    dismissButton: .default(Text("OK")) {
+                        showAlert = false
+                    }
+                )
             }
         }
     }
