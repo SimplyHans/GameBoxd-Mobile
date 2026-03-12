@@ -10,9 +10,10 @@ final class AuthViewModel: ObservableObject {
 
     private let service: AuthServicing
 
-    init(service: AuthServicing = AuthService.shared) {
-        self.service = service
-        let user = service.currentUser()
+    init(service: AuthServicing? = nil) {
+        let resolvedService = service ?? AuthService.shared
+        self.service = resolvedService
+        let user = resolvedService.currentUser()
         self.currentUser = user
         self.isAuthenticated = user != nil
     }
@@ -60,4 +61,3 @@ final class AuthViewModel: ObservableObject {
         isLoading = false
     }
 }
-
