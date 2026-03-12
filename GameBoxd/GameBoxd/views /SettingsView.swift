@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
     @State private var notificationsEnabled: Bool = true
     @State private var darkModeEnabled: Bool = true
     @State private var autoPlayVideos: Bool = false
@@ -37,6 +38,25 @@ struct SettingsView: View {
                                     showAbout = true
                                 } label: {
                                     SettingsNavRow(title: "About", systemImage: "info.circle")
+                                }
+                                .buttonStyle(.plain)
+
+                                Button {
+                                    authViewModel.logout()
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "arrow.backward.square")
+                                            .foregroundStyle(.red)
+                                        Text("Log Out")
+                                            .foregroundStyle(.red)
+                                            .font(.body.weight(.semibold))
+                                        Spacer()
+                                    }
+                                    .padding(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(Color.red.opacity(0.15))
+                                    )
                                 }
                                 .buttonStyle(.plain)
                             }

@@ -14,6 +14,7 @@ enum AuthError: LocalizedError {
     case missingFields
     case unknown
 
+    // Validation error description
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
