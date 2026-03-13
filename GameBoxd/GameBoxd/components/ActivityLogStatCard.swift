@@ -53,28 +53,20 @@ struct FilterPill: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? .white : .white.opacity(0.7))
+                .foregroundStyle(isSelected ? .white : Color.white.opacity(0.6))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
         }
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(isSelected ? Color.purple.opacity(0.4) : Color.clear)
+                .fill(isSelected ? Color.purple : Color(red: 15/255, green: 15/255, blue: 25/255))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(
                     isSelected
-                        ? LinearGradient(
-                            colors: [Color(red: 0, green: 219/255, blue: 255/255), Color.purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        : LinearGradient(
-                            colors: [Color.white.opacity(0.25), Color.white.opacity(0.15)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
+                        ? Color(red: 125/255, green: 211/255, blue: 252/255)
+                        : Color.white.opacity(0.2),
                     lineWidth: isSelected ? 2 : 1
                 )
         )
