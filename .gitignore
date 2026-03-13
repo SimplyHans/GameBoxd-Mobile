@@ -1,0 +1,11 @@
+# HTML preview (local only, do not commit)
+html-preview/
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
