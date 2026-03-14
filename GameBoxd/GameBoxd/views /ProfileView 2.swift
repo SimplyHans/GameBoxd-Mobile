@@ -64,7 +64,8 @@ struct ProfileView: View {
                                     currentUsername: username,
                                     currentBio: bio,
                                     currentAbout: about
-                                ) { _, newBio, newAbout in
+                                ) { newName, newBio, newAbout in
+                                    authVM.updateUsername(newName)
                                     self.bio = newBio
                                     self.about = newAbout
                                 }

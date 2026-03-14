@@ -32,7 +32,10 @@ final class AuthViewModel: ObservableObject {
             }, completion: completion)
         }
     }
-
+    func updateUsername(_ newUsername: String){
+        try? service.updateUsername(newUsername)
+        currentUser = service.currentUser()
+    }
     func logout() {
         service.logout()
         currentUser = nil
