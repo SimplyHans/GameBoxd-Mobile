@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct NotificationsView: View {
     @State private var items: [NotificationItem] = NotificationItem.sample

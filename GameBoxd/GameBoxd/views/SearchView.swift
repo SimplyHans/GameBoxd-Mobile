@@ -8,10 +8,64 @@
 import Foundation
 import SwiftUI
 
+struct GameLog: Identifiable {
+    let id = UUID()
+    let title: String
+    let imageName: String
+    let hours: Int
+    let lastPlayed: String
+}
+
+struct GameRow: View {
+    let game: GameLog
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(game.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 56, height: 56)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(game.title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                HStack(spacing: 8) {
+                    Text("\(game.hours)h played")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.75))
+                    Text("•")
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text(game.lastPlayed)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.75))
+                }
+            }
+
+            Spacer()
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.black.opacity(0.25))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(
+                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: 1.5
+                )
+        )
+    }
+}
+
 struct SearchView: View {
     @State private var query: String = ""
 
-    // Demo data – replace with real data source
+    // Demo data ΓÇô replace with real data source
     @State private var allGames: [GameLog] = [
         GameLog(title: "Fortnit", imageName: "Image", hours: 124, lastPlayed: "Yesterday"),
         GameLog(title: "Apex Legends", imageName: "Image", hours: 87, lastPlayed: "2 days ago"),

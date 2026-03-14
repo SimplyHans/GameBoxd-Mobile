@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -42,7 +42,7 @@ struct LoginView: View {
                                     .font(.headline)
                                 AuthFieldBackground {
                                     PlaceholderSecureField(
-                                        placeholder: "••••••••",
+                                        placeholder: "ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
                                         text: $password,
                                         placeholderColor: .white
                                     )

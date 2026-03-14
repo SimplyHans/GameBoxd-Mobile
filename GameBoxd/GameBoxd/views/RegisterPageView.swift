@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct RegisterPageView: View {
     @Environment(\.dismiss) private var dismiss
@@ -59,7 +59,7 @@ struct RegisterPageView: View {
                                 .font(.headline)
                             AuthFieldBackground {
                                 PlaceholderSecureField(
-                                    placeholder: "••••••••",
+                                    placeholder: "ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
                                     text: $password,
                                     placeholderColor: .white
                                 )

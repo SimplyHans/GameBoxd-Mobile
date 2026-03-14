@@ -1,4 +1,4 @@
-import Foundation
+﻿import Foundation
 import SwiftUI
 
 struct HomeView: View {
@@ -219,7 +219,7 @@ struct FeaturedHero: View {
                         .font(.title.weight(.bold))
                         .foregroundStyle(.white)
 
-                    Text("\(game.platform) • \(game.releaseYear)")
+                    Text("\(game.platform) ΓÇó \(game.releaseYear)")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.85))
 
@@ -290,7 +290,7 @@ struct GameCard: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
-                Text("\(game.rating, specifier: "%.1f") ★ • \(game.platform)")
+                Text("\(game.rating, specifier: "%.1f") Γÿà ΓÇó \(game.platform)")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.75))
                     .lineLimit(1)
@@ -397,7 +397,7 @@ private struct GameDetailsSheet: View {
                                 .font(.largeTitle.weight(.bold))
                                 .foregroundStyle(.white)
 
-                            Text("\(game.platform) • \(game.releaseYear) • \(game.rating, specifier: "%.1f") ★")
+                            Text("\(game.platform) ΓÇó \(game.releaseYear) ΓÇó \(game.rating, specifier: "%.1f") Γÿà")
                                 .font(.subheadline)
                                 .foregroundStyle(.white.opacity(0.75))
 

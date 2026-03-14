@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct EditProfileView: View {
     @Environment(\.dismiss) private var dismiss
