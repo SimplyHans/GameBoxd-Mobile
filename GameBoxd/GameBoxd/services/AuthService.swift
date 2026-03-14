@@ -38,6 +38,7 @@ protocol AuthServicing {
     func register(username: String, email: String, password: String) async throws -> User
     func currentUser() -> User?
     func logout()
+    func updateUsername(_ newUsername: String) throws
 }
 
 final class AuthService: AuthServicing {
@@ -51,7 +52,6 @@ final class AuthService: AuthServicing {
     func login(email: String, password: String) async throws -> User {
         try validate(email: email, password: password)
 
-        // Simulate network delay
         try await Task.sleep(nanoseconds: 500_000_000)
 
         guard
@@ -82,7 +82,6 @@ final class AuthService: AuthServicing {
             throw AuthError.weakPassword
         }
 
-        // Simulate network delay
         try await Task.sleep(nanoseconds: 700_000_000)
 
         if UserDefaults.standard.data(forKey: storedUserKey) != nil {
@@ -106,6 +105,16 @@ final class AuthService: AuthServicing {
             return nil
         }
         return try? JSONDecoder().decode(User.self, from: data)
+    }
+
+    func updateUsername(_ newUsername: String) throws {
+        guard let user = currentUser() else { throw AuthError.unknown }
+        let updated = User(id: user.id, username: newUsername, email: user.email)
+        if let encoded = try? JSONEncoder().encode(updated) {
+            UserDefaults.standard.set(encoded, forKey: storedUserKey)
+        } else {
+            throw AuthError.unknown
+        }
     }
 
     func logout() {
@@ -135,4 +144,3 @@ final class AuthService: AuthServicing {
         return NSPredicate(format: "SELF MATCHES %@", emailRegEx).evaluate(with: email)
     }
 }
-

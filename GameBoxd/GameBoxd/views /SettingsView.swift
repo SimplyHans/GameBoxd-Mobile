@@ -29,11 +29,14 @@ struct SettingsView: View {
 
                             SettingsSection(title: "Account") {
                                 NavigationLink {
-                                    EditProfileView(currentUsername: "Hanson", currentBio: "Gamer. Competitive.") { _, _ in }
+                                    EditProfileView(
+                                        currentUsername: "Hanson",
+                                        currentBio: "Gamer. Competitive.",
+                                        currentAbout: "Loves shooters and team games."
+                                    ) { _, _, _ in }
                                 } label: {
                                     SettingsNavRow(title: "Edit Profile", systemImage: "person.circle")
-                                }
-                                SettingsNavRow(title: "Privacy", systemImage: "lock.shield")
+                                };                                SettingsNavRow(title: "Privacy", systemImage: "lock.shield")
                                 Button {
                                     showAbout = true
                                 } label: {

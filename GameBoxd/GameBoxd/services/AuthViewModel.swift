@@ -31,7 +31,10 @@ final class AuthViewModel: ObservableObject {
             await performRegister(username: username, email: email, password: password, completion: completion)
         }
     }
-
+    func updateUsername(_ newUsername: String){
+        try? service.updateUsername(newUsername)
+        currentUser = service.currentUser()
+    }
     func logout() {
         service.logout()
         currentUser = nil

@@ -1,8 +1,13 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @State private var username: String = "Hanson"
+    @EnvironmentObject var authVM: AuthViewModel
     @State private var bio: String = "Gamer. Competitive. Always grinding."
+    @State private var about: String = "Loves shooters and team games. Looking for ranked squads on weekends."
+
+    private var username: String {
+        authVM.currentUser?.username ?? "Player"
+    }
 
     var body: some View {
         NavigationStack {
@@ -10,7 +15,7 @@ struct ProfileView: View {
                 AppBackground {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
-                            // Header
+
                             Text("Profile")
                                 .foregroundStyle(.white)
                                 .font(.largeTitle.weight(.bold))
@@ -18,7 +23,6 @@ struct ProfileView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.top, 8)
 
-                            // Avatar + username
                             HStack(alignment: .center, spacing: 16) {
                                 ZStack {
                                     Circle()
@@ -48,7 +52,6 @@ struct ProfileView: View {
                             }
                             .padding(.horizontal, 16)
 
-                            // Stats
                             HStack(spacing: 12) {
                                 ProfileStat(title: "Games", value: "42")
                                 ProfileStat(title: "Hours", value: "1.2k")
@@ -56,11 +59,15 @@ struct ProfileView: View {
                             }
                             .padding(.horizontal, 16)
 
-                            // Edit Button
                             NavigationLink {
-                                EditProfileView(currentUsername: username, currentBio: bio) { newName, newBio in
-                                    self.username = newName
+                                EditProfileView(
+                                    currentUsername: username,
+                                    currentBio: bio,
+                                    currentAbout: about
+                                ) { newName, newBio, newAbout in
+                                    authVM.updateUsername(newName)
                                     self.bio = newBio
+                                    self.about = newAbout
                                 }
                             } label: {
                                 Text("Edit Profile")
@@ -82,16 +89,14 @@ struct ProfileView: View {
                             }
                             .padding(.horizontal, 16)
 
-                            // About Section
                             ProfileSectionCard(title: "About", alignment: .center) {
-                                Text("Loves shooters and team games. Looking for ranked squads on weekends.")
+                                Text(about)
                                     .foregroundStyle(.white.opacity(0.9))
                                     .font(.subheadline)
                                     .multilineTextAlignment(.center)
                             }
                             .padding(.horizontal, 16)
 
-                            // Recently Played Section
                             ProfileSectionCard(title: "Recently Played") {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 16) {
@@ -123,7 +128,6 @@ struct ProfileView: View {
                             }
                             .padding(.horizontal, 16)
 
-                            // Achievements / Badges placeholder
                             ProfileSectionCard(title: "Badges", alignment: .center) {
                                 HStack(spacing: 12) {
                                     ForEach(0..<4) { i in
@@ -155,6 +159,8 @@ struct ProfileView: View {
         }
     }
 }
+
+// MARK: - Supporting Views
 
 struct ProfileStat: View {
     let title: String
@@ -221,4 +227,5 @@ struct ProfileSectionCard<Content: View>: View {
 
 #Preview {
     ProfileView()
+        .environmentObject(AuthViewModel())
 }
