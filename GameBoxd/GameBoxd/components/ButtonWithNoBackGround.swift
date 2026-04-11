@@ -7,17 +7,13 @@ struct ButtonWithNoBackGround: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .foregroundStyle(Color.bwnbg)
+                .foregroundStyle(Color("bwnbg"))
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
                 .padding()
-               .cornerRadius(14)
-               
+                .cornerRadius(14)
         }
-        
-        
     }
-    
 }
 
 #Preview("PrimaryButton Variants") {

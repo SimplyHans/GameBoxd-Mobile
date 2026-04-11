@@ -1,195 +1,107 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct RegisterPageView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var username: String = ""
-    @State private var email: String = ""
-    @State private var password: String = ""
-    @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject private var authViewModel: AuthViewModel
+
+    @State private var username = ""
+    @State private var email = ""
+    @State private var password = ""
     @State private var showAlert = false
 
     var body: some View {
-        ZStack {
-            AppBackground {
-                ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                        Text("Register")
-                            .foregroundStyle(.white)
-                            .font(.largeTitle.weight(.bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+        AppBackground {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    AppScreenHeader(
+                        eyebrow: "Create account",
+                        title: "Register",
+                        subtitle: "Set up your profile and start tracking games cleanly."
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Username")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            AuthFieldBackground {
-                                PlaceholderTextField(
-                                    placeholder: "Your gamer tag",
-                                    text: $username,
-                                    placeholderColor: .white,
-                                    autocapitalization: .words,
-                                    disableAutocorrection: true
-                                )
-                            }
+                    AppSurface(fill: AppTheme.surfaceRaised) {
+                        registerField(label: "Username") {
+                            TextField("Your gamer tag", text: $username)
+                                .textInputAutocapitalization(.words)
+                                .autocorrectionDisabled(true)
+                                .foregroundStyle(AppTheme.textPrimary)
                         }
-                        .padding(.horizontal, 16)
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Email")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            AuthFieldBackground {
-                                PlaceholderTextField(
-                                    placeholder: "name@example.com",
-                                    text: $email,
-                                    placeholderColor: .white,
-                                    keyboardType: .emailAddress,
-                                    autocapitalization: .never,
-                                    disableAutocorrection: true
-                                )
-                            }
+                        registerField(label: "Email") {
+                            TextField("name@example.com", text: $email)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled(true)
+                                .foregroundStyle(AppTheme.textPrimary)
                         }
-                        .padding(.horizontal, 16)
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Password")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            AuthFieldBackground {
-                                PlaceholderSecureField(
-                                    placeholder: "ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
-                                    text: $password,
-                                    placeholderColor: .white
-                                )
-                            }
+                        registerField(label: "Password") {
+                            SecureField("Create a password", text: $password)
+                                .foregroundStyle(AppTheme.textPrimary)
                         }
-                        .padding(.horizontal, 16)
 
                         Button {
                             authViewModel.register(username: username, email: email, password: password) {
                                 dismiss()
                             }
-                            if authViewModel.errorMessage != nil {
-                                showAlert = true
-                            }
                         } label: {
-                            Text("Register")
-                                .font(.headline)
-                                .foregroundStyle(.white)
+                            Text(authViewModel.isLoading ? "Creating Account..." : "Register")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(AppTheme.backgroundBase)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 15)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color.black.opacity(0.25))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(
-                                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                            lineWidth: 1.5
-                                        )
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .fill(AppTheme.textPrimary)
                                 )
                         }
+                        .buttonStyle(.plain)
                         .disabled(authViewModel.isLoading)
-                        .opacity(authViewModel.isLoading ? 0.6 : 1.0)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                        HStack {
-                            Text("Already have an account?")
-                                .foregroundStyle(.white.opacity(0.8))
-                            Button("Log in") {
-                                dismiss()
-                            }
-                            .foregroundStyle(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
-
-                        Spacer(minLength: 24)
+                        .opacity(authViewModel.isLoading ? 0.65 : 1)
                     }
+                    .padding(.horizontal, 20)
+
+                    HStack(spacing: 6) {
+                        Text("Already have an account?")
+                            .foregroundStyle(AppTheme.textSecondary)
+
+                        Button("Log in") {
+                            dismiss()
+                        }
+                        .foregroundStyle(AppTheme.accent)
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 24)
                 }
             }
-            .alert(isPresented: $showAlert) {
-                Alert(
-                    title: Text("Registration Failed"),
-                    message: Text(authViewModel.errorMessage ?? "Please try again."),
-                    dismissButton: .default(Text("OK")) {
-                        showAlert = false
-                    }
-                )
-            }
         }
-    }
-}
-
-private struct AuthFieldBackground<Content: View>: View {
-    @ViewBuilder var content: Content
-    var body: some View {
-        content
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.black.opacity(0.25))
+        .alert(isPresented: $showAlert) {
+            Alert(
+                title: Text("Registration Failed"),
+                message: Text(authViewModel.errorMessage ?? "Please try again."),
+                dismissButton: .default(Text("OK")) {
+                    showAlert = false
+                }
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(
-                        LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1
-                    )
-            )
-    }
-}
-
-private struct PlaceholderTextField: View {
-    let placeholder: String
-    @Binding var text: String
-    var placeholderColor: Color = .white
-    var keyboardType: UIKeyboardType = .default
-    var autocapitalization: TextInputAutocapitalization = .never
-    var disableAutocorrection: Bool = true
-
-    var body: some View {
-        ZStack(alignment: .leading) {
-            if text.isEmpty {
-                Text(placeholder)
-                    .foregroundStyle(placeholderColor)
-            }
-            TextField("", text: $text)
-                .keyboardType(keyboardType)
-                .textInputAutocapitalization(autocapitalization)
-                .autocorrectionDisabled(disableAutocorrection)
-                .foregroundStyle(.white)
-                .tint(.white)
-                .accentColor(.white)
+        }
+        .onChange(of: authViewModel.errorMessage) { _, newValue in
+            showAlert = newValue != nil
         }
     }
-}
 
-private struct PlaceholderSecureField: View {
-    let placeholder: String
-    @Binding var text: String
-    var placeholderColor: Color = .white
-    @State private var isEditing: Bool = false
+    private func registerField<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(label)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(AppTheme.textPrimary)
 
-    var body: some View {
-        ZStack(alignment: .leading) {
-            if text.isEmpty && !isEditing {
-                Text(placeholder)
-                    .foregroundStyle(placeholderColor)
+            AppInputContainer {
+                content()
             }
-            SecureField("", text: $text)
-                .foregroundStyle(.white)
-                .tint(.white)
-                .accentColor(.white)
-                .onTapGesture { isEditing = true }
-                .onChange(of: text) { _, _ in isEditing = true }
         }
-        .onTapGesture { isEditing = true }
     }
 }
 
@@ -197,4 +109,5 @@ private struct PlaceholderSecureField: View {
     NavigationStack {
         RegisterPageView()
     }
+    .environmentObject(AuthViewModel())
 }
