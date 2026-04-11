@@ -6,6 +6,11 @@ struct User: Codable, Equatable {
     let email: String
 }
 
+private struct StoredAccount: Codable {
+    let user: User
+    let password: String
+}
+
 enum AuthError: LocalizedError {
     case invalidCredentials
     case userAlreadyExists
@@ -44,8 +49,8 @@ protocol AuthServicing {
 final class AuthService: AuthServicing {
     static let shared = AuthService()
 
-    private let storedUserKey = "auth.storedUser"
-    private let storedPasswordKey = "auth.storedPassword"
+    private let accountsStorageKey = "auth.accounts"
+    private let currentUserIDKey = "auth.currentUserID"
 
     private init() {}
 
@@ -54,27 +59,26 @@ final class AuthService: AuthServicing {
 
         try await Task.sleep(nanoseconds: 500_000_000)
 
-        guard
-            let data = UserDefaults.standard.data(forKey: storedUserKey),
-            let storedUser = try? JSONDecoder().decode(User.self, from: data),
-            let storedPassword = UserDefaults.standard.string(forKey: storedPasswordKey),
-            storedUser.email.caseInsensitiveCompare(email) == .orderedSame,
-            storedPassword == password
-        else {
+        guard let account = storedAccounts().first(where: {
+            $0.user.email.caseInsensitiveCompare(email) == .orderedSame &&
+            $0.password == password
+        }) else {
             throw AuthError.invalidCredentials
         }
 
-        return storedUser
+        UserDefaults.standard.set(account.user.id.uuidString, forKey: currentUserIDKey)
+        return account.user
     }
 
     func register(username: String, email: String, password: String) async throws -> User {
-        guard !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !password.isEmpty else {
+        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        guard !trimmedUsername.isEmpty, !trimmedEmail.isEmpty, !password.isEmpty else {
             throw AuthError.missingFields
         }
 
-        guard isValidEmail(email) else {
+        guard isValidEmail(trimmedEmail) else {
             throw AuthError.invalidEmail
         }
 
@@ -84,15 +88,16 @@ final class AuthService: AuthServicing {
 
         try await Task.sleep(nanoseconds: 700_000_000)
 
-        if UserDefaults.standard.data(forKey: storedUserKey) != nil {
+        var accounts = storedAccounts()
+        guard !accounts.contains(where: { $0.user.email.caseInsensitiveCompare(trimmedEmail) == .orderedSame }) else {
             throw AuthError.userAlreadyExists
         }
 
-        let user = User(id: UUID(), username: username, email: email.lowercased())
+        let user = User(id: UUID(), username: trimmedUsername, email: trimmedEmail)
+        accounts.append(StoredAccount(user: user, password: password))
 
-        if let encoded = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(encoded, forKey: storedUserKey)
-            UserDefaults.standard.set(password, forKey: storedPasswordKey)
+        if let encoded = try? JSONEncoder().encode(accounts) {
+            UserDefaults.standard.set(encoded, forKey: accountsStorageKey)
         } else {
             throw AuthError.unknown
         }
@@ -101,25 +106,38 @@ final class AuthService: AuthServicing {
     }
 
     func currentUser() -> User? {
-        guard let data = UserDefaults.standard.data(forKey: storedUserKey) else {
+        guard
+            let currentUserID = UserDefaults.standard.string(forKey: currentUserIDKey),
+            let userID = UUID(uuidString: currentUserID)
+        else {
             return nil
         }
-        return try? JSONDecoder().decode(User.self, from: data)
+
+        return storedAccounts().first(where: { $0.user.id == userID })?.user
     }
 
     func updateUsername(_ newUsername: String) throws {
+        let trimmedUsername = newUsername.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedUsername.isEmpty else { throw AuthError.missingFields }
         guard let user = currentUser() else { throw AuthError.unknown }
-        let updated = User(id: user.id, username: newUsername, email: user.email)
-        if let encoded = try? JSONEncoder().encode(updated) {
-            UserDefaults.standard.set(encoded, forKey: storedUserKey)
-        } else {
+
+        var accounts = storedAccounts()
+        guard let index = accounts.firstIndex(where: { $0.user.id == user.id }) else {
             throw AuthError.unknown
         }
+
+        let updatedUser = User(id: user.id, username: trimmedUsername, email: user.email)
+        accounts[index] = StoredAccount(user: updatedUser, password: accounts[index].password)
+
+        guard let encoded = try? JSONEncoder().encode(accounts) else {
+            throw AuthError.unknown
+        }
+
+        UserDefaults.standard.set(encoded, forKey: accountsStorageKey)
     }
 
     func logout() {
-        UserDefaults.standard.removeObject(forKey: storedUserKey)
-        UserDefaults.standard.removeObject(forKey: storedPasswordKey)
+        UserDefaults.standard.removeObject(forKey: currentUserIDKey)
     }
 
     // MARK: - Validation
@@ -142,5 +160,16 @@ final class AuthService: AuthServicing {
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
         return NSPredicate(format: "SELF MATCHES %@", emailRegEx).evaluate(with: email)
+    }
+
+    private func storedAccounts() -> [StoredAccount] {
+        guard
+            let data = UserDefaults.standard.data(forKey: accountsStorageKey),
+            let accounts = try? JSONDecoder().decode([StoredAccount].self, from: data)
+        else {
+            return []
+        }
+
+        return accounts
     }
 }

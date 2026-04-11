@@ -1,227 +1,265 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct ProfileView: View {
-    @EnvironmentObject var authVM: AuthViewModel
-    @State private var bio: String = "Gamer. Competitive. Always grinding."
-    @State private var about: String = "Loves shooters and team games. Looking for ranked squads on weekends."
+    @EnvironmentObject private var authVM: AuthViewModel
+    @State private var bio = ""
+    @State private var about = ""
+    @State private var recentGames: [HomeGame] = []
+    @State private var favoriteGames: [HomeGame] = []
+    @State private var libraryCount = 0
+    @State private var totalHours = 0
+    @State private var favoriteCount = 0
+    @State private var selectedGame: HomeGame?
+
+    private let service: HomeServicing = HomeService.shared
+    private let appStateService: AppStateServicing = AppStateService.shared
 
     private var username: String {
         authVM.currentUser?.username ?? "Player"
     }
 
+    private var topGenres: [String] {
+        let allGenres = service.allGames().flatMap(\.genres)
+        let counts = Dictionary(allGenres.map { ($0, 1) }, uniquingKeysWith: +)
+        return counts
+            .sorted { lhs, rhs in
+                if lhs.value == rhs.value {
+                    return lhs.key < rhs.key
+                }
+                return lhs.value > rhs.value
+            }
+            .prefix(4)
+            .map(\.key)
+    }
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                AppBackground {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
+            AppBackground {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        AppScreenHeader(
+                            eyebrow: "Profile",
+                            title: username,
+                            subtitle: "Your gaming identity, stats, and latest sessions."
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
-                            Text("Profile")
-                                .foregroundStyle(.white)
-                                .font(.largeTitle.weight(.bold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 8)
+                        heroProfileCard
+                            .padding(.horizontal, 20)
 
-                            HStack(alignment: .center, spacing: 16) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.black.opacity(0.25))
-                                        .frame(width: 84, height: 84)
-                                        .overlay(
-                                            Circle().stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 2
-                                            )
-                                        )
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 36))
-                                        .foregroundStyle(.white.opacity(0.9))
-                                }
+                        statsGrid
+                            .padding(.horizontal, 20)
 
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(username)
-                                        .font(.title2.weight(.bold))
-                                        .foregroundStyle(.white)
-                                    Text(bio)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.white.opacity(0.8))
-                                        .lineLimit(2)
-                                }
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
+                        aboutSection
+                            .padding(.horizontal, 20)
 
-                            HStack(spacing: 12) {
-                                ProfileStat(title: "Games", value: "42")
-                                ProfileStat(title: "Hours", value: "1.2k")
-                                ProfileStat(title: "Followers", value: "389")
-                            }
-                            .padding(.horizontal, 16)
-
-                            NavigationLink {
-                                EditProfileView(
-                                    currentUsername: username,
-                                    currentBio: bio,
-                                    currentAbout: about
-                                ) { newName, newBio, newAbout in
-                                    authVM.updateUsername(newName)
-                                    self.bio = newBio
-                                    self.about = newAbout
-                                }
-                            } label: {
-                                Text("Edit Profile")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .fill(Color.black.opacity(0.25))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 1.5
-                                            )
-                                    )
-                            }
-                            .padding(.horizontal, 16)
-
-                            ProfileSectionCard(title: "About", alignment: .center) {
-                                Text(about)
-                                    .foregroundStyle(.white.opacity(0.9))
-                                    .font(.subheadline)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .padding(.horizontal, 16)
-
-                            ProfileSectionCard(title: "Recently Played") {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        ForEach(0..<5) { _ in
-                                            VStack(spacing: 8) {
-                                                Image("Image")
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 120, height: 160)
-                                                    .clipped()
-                                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                                            .stroke(
-                                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                                lineWidth: 2
-                                                            )
-                                                    )
-                                                Text("Fortnit")
-                                                    .font(.subheadline.weight(.semibold))
-                                                    .foregroundStyle(.white)
-                                                    .lineLimit(1)
-                                            }
-                                            .frame(width: 120)
-                                        }
-                                    }
-                                    .padding(.horizontal, 4)
-                                }
-                            }
-                            .padding(.horizontal, 16)
-
-                            ProfileSectionCard(title: "Badges", alignment: .center) {
-                                HStack(spacing: 12) {
-                                    ForEach(0..<4) { i in
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(Color.black.opacity(0.25))
-                                            .frame(width: 64, height: 64)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                    .stroke(
-                                                        LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                        lineWidth: 1
-                                                    )
-                                            )
-                                            .overlay(
-                                                Text("#\(i+1)")
-                                                    .foregroundStyle(.white.opacity(0.9))
-                                            )
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                            }
-                            .padding(.horizontal, 16)
-
-                            Spacer(minLength: 24)
+                        if !recentGames.isEmpty {
+                            recentSection
                         }
+
+                        if !favoriteGames.isEmpty {
+                            favoriteSection
+                        }
+
+                        stylesSection
+                            .padding(.horizontal, 20)
                     }
+                    .padding(.bottom, 32)
                 }
+            }
+            .task {
+                await refreshProfileData(forceRemoteSync: false)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .homeServiceCatalogDidChange)) { _ in
+                Task {
+                    await refreshProfileData(forceRemoteSync: false)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .homeServiceUserStateDidChange)) { _ in
+                Task {
+                    await refreshProfileData(forceRemoteSync: false)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .appStateDidChange)) { _ in
+                Task {
+                    await refreshProfileData(forceRemoteSync: false)
+                }
+            }
+            .sheet(item: $selectedGame) { game in
+                GameDetailsSheet(
+                    game: game,
+                    isFavorite: service.isFavorite(gameID: game.id, for: authVM.currentUser),
+                    onFavoriteToggle: {
+                        _ = service.toggleFavorite(gameID: game.id, for: authVM.currentUser)
+                        Task { await refreshProfileData(forceRemoteSync: false) }
+                    },
+                    onMarkPlayed: {
+                        _ = service.markPlayed(gameID: game.id, for: authVM.currentUser)
+                        Task { await refreshProfileData(forceRemoteSync: false) }
+                    }
+                )
+                .presentationDetents([.medium, .large])
             }
         }
     }
-}
 
-// MARK: - Supporting Views
+    private var heroProfileCard: some View {
+        AppSurface(fill: AppTheme.surfaceRaised) {
+            HStack(alignment: .center, spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.surfaceMuted)
+                        .frame(width: 92, height: 92)
+                    Circle()
+                        .stroke(AppTheme.stroke, lineWidth: 1)
+                        .frame(width: 92, height: 92)
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(AppTheme.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    AppTag(title: "Active player", systemImage: "bolt.fill")
+
+                    Text(username)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(AppTheme.textPrimary)
+
+                    Text(bio)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            NavigationLink {
+                EditProfileView(
+                    currentUsername: username,
+                    currentBio: bio,
+                    currentAbout: about
+                ) { newName, newBio, newAbout in
+                    authVM.updateProfile(username: newName, bio: newBio, about: newAbout)
+                    bio = appStateService.profile(for: authVM.currentUser).bio
+                    about = appStateService.profile(for: authVM.currentUser).about
+                }
+            } label: {
+                HStack {
+                    Text("Edit profile")
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                }
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(AppTheme.backgroundBase)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(AppTheme.textPrimary)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var statsGrid: some View {
+        HStack(spacing: 12) {
+            ProfileStat(title: "Library", value: "\(libraryCount)")
+            ProfileStat(title: "Hours", value: compactHoursText(totalHours), emphasize: true)
+            ProfileStat(title: "Favorites", value: "\(favoriteCount)")
+        }
+    }
+
+    private var aboutSection: some View {
+        AppSurface {
+            AppSectionHeader(title: "About", subtitle: "How this player likes to game.")
+            Text(about)
+                .foregroundStyle(AppTheme.textSecondary)
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AppSectionHeader(
+                title: "Recently played",
+                subtitle: "Quick access to your latest sessions."
+            )
+            .padding(.horizontal, 20)
+
+            HorizontalGamesRow(items: recentGames) { game in
+                selectedGame = game
+            }
+        }
+    }
+
+    private var favoriteSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AppSectionHeader(
+                title: "Favorite picks",
+                subtitle: "The titles you keep returning to."
+            )
+            .padding(.horizontal, 20)
+
+            VStack(spacing: 14) {
+                ForEach(favoriteGames.prefix(3)) { game in
+                    Button {
+                        selectedGame = game
+                    } label: {
+                        GameRow(game: game)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private var stylesSection: some View {
+        AppSurface(fill: AppTheme.surfaceRaised) {
+            AppSectionHeader(
+                title: "Gaming style",
+                subtitle: "Genres that define this profile."
+            )
+
+            FlexibleTagRow(tags: topGenres)
+        }
+    }
+
+    private func refreshProfileData(forceRemoteSync: Bool) async {
+        await HomeService.shared.refreshCatalogIfPossible(force: forceRemoteSync)
+
+        let games = service.allGames()
+        let content = service.loadHomeContent(for: authVM.currentUser)
+        let profile = appStateService.profile(for: authVM.currentUser)
+
+        recentGames = content.sections.first(where: { $0.id == "recent" })?.items ?? []
+        favoriteGames = games.filter { service.isFavorite(gameID: $0.id, for: authVM.currentUser) }
+        libraryCount = games.count
+        totalHours = games.reduce(0) { $0 + $1.hoursPlayed }
+        favoriteCount = favoriteGames.count
+        bio = profile.bio
+        about = profile.about
+    }
+
+    private func compactHoursText(_ hours: Int) -> String {
+        if hours >= 1000 {
+            return String(format: "%.1fk", Double(hours) / 1000.0)
+        }
+        return "\(hours)"
+    }
+}
 
 struct ProfileStat: View {
     let title: String
     let value: String
+    var emphasize: Bool = false
 
     var body: some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.white)
-            Text(title)
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(.white.opacity(0.8))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.black.opacity(0.25))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5
-                )
-        )
-    }
-}
-
-struct ProfileSectionCard<Content: View>: View {
-    let title: String
-    let alignment: HorizontalAlignment
-    @ViewBuilder var content: Content
-
-    init(title: String, alignment: HorizontalAlignment = .leading, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.alignment = alignment
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: alignment, spacing: 12) {
-            Text(title)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
-            content
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.black.opacity(0.25))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5
-                )
-        )
+        AppMetricBadge(title: title, value: value, emphasize: emphasize)
     }
 }
 

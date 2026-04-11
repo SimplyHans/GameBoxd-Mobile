@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct EditProfileView: View {
     @Environment(\.dismiss) private var dismiss
@@ -17,109 +17,73 @@ struct EditProfileView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppBackground {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Edit Profile")
-                            .foregroundStyle(.white)
-                            .font(.largeTitle.weight(.bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+        AppBackground {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    AppScreenHeader(
+                        eyebrow: "Profile",
+                        title: "Edit Profile",
+                        subtitle: "Update the identity and description attached to your account."
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
 
-                        // Username
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Username")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            ProfileFieldBackground {
-                                TextField("Enter username", text: $username)
-                                    .foregroundStyle(.white)
-                                    .textInputAutocapitalization(.words)
-                            }
+                    AppSurface(fill: AppTheme.surfaceRaised) {
+                        profileField(label: "Username") {
+                            TextField("Enter username", text: $username)
+                                .foregroundStyle(AppTheme.textPrimary)
+                                .textInputAutocapitalization(.words)
                         }
-                        .padding(.horizontal, 16)
 
-                        // Bio
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Bio")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            ProfileFieldBackground {
-                                TextEditor(text: $bio)
-                                    .foregroundStyle(.white)
-                                    .frame(minHeight: 80)
-                                    .scrollContentBackground(.hidden)
-                                    .background(Color.clear)
-                            }
+                        profileField(label: "Bio") {
+                            TextEditor(text: $bio)
+                                .foregroundStyle(AppTheme.textPrimary)
+                                .frame(minHeight: 90)
+                                .scrollContentBackground(.hidden)
+                                .background(Color.clear)
                         }
-                        .padding(.horizontal, 16)
 
-                        // About
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("About")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            ProfileFieldBackground {
-                                TextEditor(text: $about)
-                                    .foregroundStyle(.white)
-                                    .frame(minHeight: 120)
-                                    .scrollContentBackground(.hidden)
-                                    .background(Color.clear)
-                            }
+                        profileField(label: "About") {
+                            TextEditor(text: $about)
+                                .foregroundStyle(AppTheme.textPrimary)
+                                .frame(minHeight: 140)
+                                .scrollContentBackground(.hidden)
+                                .background(Color.clear)
                         }
-                        .padding(.horizontal, 16)
 
-                        // Save
                         Button {
                             onSave(username, bio, about)
                             dismiss()
                         } label: {
-                            Text("Save")
-                                .font(.headline)
-                                .foregroundStyle(.white)
+                            Text("Save Changes")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(AppTheme.backgroundBase)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 15)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color.black.opacity(0.25))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(
-                                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                            lineWidth: 1.5
-                                        )
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .fill(AppTheme.textPrimary)
                                 )
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                        Spacer(minLength: 24)
+                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                 }
             }
         }
     }
-}
 
-private struct ProfileFieldBackground<Content: View>: View {
-    @ViewBuilder var content: Content
-    var body: some View {
-        content
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(
-                        LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1
-                    )
-            )
+    private func profileField<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(label)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(AppTheme.textPrimary)
+
+            AppInputContainer {
+                content()
+            }
+        }
     }
 }
 

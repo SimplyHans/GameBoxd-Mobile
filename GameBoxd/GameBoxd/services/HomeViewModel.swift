@@ -9,19 +9,22 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published var selectedGame: HomeGame?
 
-    private let service: HomeServicing
+    private let service: any HomeServicing & HomeCatalogRefreshing
 
-    init(service: HomeServicing? = nil) {
+    init(service: (any HomeServicing & HomeCatalogRefreshing)? = nil) {
         self.service = service ?? HomeService.shared
     }
 
-    func load(for user: User?) {
+    func load(for user: User?) async {
+        isLoading = true
+        await service.refreshCatalogIfPossible(force: false)
         apply(service.loadHomeContent(for: user))
+        isLoading = false
     }
 
-    func refresh(for user: User?) async {
+    func refresh(for user: User?, forceRemoteSync: Bool = true) async {
         isLoading = true
-        try? await Task.sleep(nanoseconds: 350_000_000)
+        await service.refreshCatalogIfPossible(force: forceRemoteSync)
         apply(service.loadHomeContent(for: user))
         isLoading = false
     }
