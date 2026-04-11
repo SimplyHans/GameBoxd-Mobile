@@ -1,60 +1,46 @@
+import Foundation
 import SwiftUI
+import PhotosUI
 
 struct FeedView: View {
-    @EnvironmentObject private var authViewModel: AuthViewModel
-    @State private var posts: [PlayerFeedPost] = []
-
-    private let appStateService: AppStateServicing = AppStateService.shared
-    private let homeService: HomeServicing = HomeService.shared
+    @State private var posts: [FeedPost] = FeedPost.sample
+    @State private var showCreatePost = false
 
     var body: some View {
-        NavigationStack {
+        ZStack {
             AppBackground {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 22) {
-                        AppScreenHeader(
-                            eyebrow: "Community",
-                            title: "Feed",
-                            subtitle: "Your actions show up here alongside the current community pulse."
-                        ) {
-                            AppTag(title: "\(posts.count) posts", systemImage: "flame.fill")
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
 
-                        if posts.isEmpty {
-                            AppEmptyState(
-                                title: "No feed activity yet",
-                                message: "Mark a game as played or add favorites to start generating your feed.",
-                                systemImage: "bubble.left.and.bubble.right.fill"
-                            )
-                            .padding(.horizontal, 20)
-                        } else {
-                            VStack(spacing: 16) {
-                                ForEach(posts) { post in
-                                    PostCard(post: post) {
-                                        posts = appStateService.toggleLike(
-                                            postID: post.id,
-                                            for: authViewModel.currentUser,
-                                            catalog: homeService.allGames()
-                                        )
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
+                        // Header
+                        HStack {
+                            Text("Feed")
+                                .foregroundStyle(.white)
+                                .font(.largeTitle.weight(.bold))
+
+                            Spacer()
+
+                            Button {
+                                showCreatePost = true
+                            } label: {
+                                Image(systemName: "plus")
+                                    .foregroundStyle(.white)
+                                    .font(.title2.weight(.bold))
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                        // Posts
+                        VStack(spacing: 16) {
+                            ForEach($posts) { $post in
+                                PostCard(post: $post)
+                                    .padding(.horizontal, 16)
+                            }
+                        }
+                        .padding(.bottom, 24)
                     }
-                    .padding(.bottom, 32)
                 }
-            }
-            .task {
-                reloadPosts()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .appStateDidChange)) { _ in
-                reloadPosts()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .homeServiceCatalogDidChange)) { _ in
-                reloadPosts()
             }
         }
         .sheet(isPresented: $showCreatePost) {
@@ -63,107 +49,145 @@ struct FeedView: View {
             }
         }
     }
+}
 
-    private func reloadPosts() {
-        posts = appStateService.feedPosts(for: authViewModel.currentUser, catalog: homeService.allGames())
-    }
+// MARK: - Model
+struct FeedPost: Identifiable {
+    let id = UUID()
+    let username: String
+    let avatarSystemName: String
+    let gameTitle: String
+    let imageName: String
+    var caption: String
+    var isLiked: Bool
+    var likeCount: Int
+    var commentCount: Int
+    var uiImage: UIImage? // ✅ NEW
+
+    static let sample: [FeedPost] = [
+        FeedPost(username: "Hanson", avatarSystemName: "person.fill", gameTitle: "Fortnite", imageName: "Image", caption: "New PR tonight!", isLiked: false, likeCount: 128, commentCount: 12, uiImage: nil),
+        FeedPost(username: "Maya", avatarSystemName: "person.crop.circle.fill", gameTitle: "Apex Legends", imageName: "Image", caption: "Clutched a 1v3!", isLiked: true, likeCount: 342, commentCount: 29, uiImage: nil),
+        FeedPost(username: "Alex", avatarSystemName: "person.circle.fill", gameTitle: "Valorant", imageName: "Image", caption: "Practicing smokes.", isLiked: false, likeCount: 57, commentCount: 6, uiImage: nil)
+    ]
 }
 
 // MARK: - Post Card
 struct PostCard: View {
-    let post: PlayerFeedPost
-    let onLikeToggle: () -> Void
+    @Binding var post: FeedPost
 
     var body: some View {
-        AppSurface(cornerRadius: 26, padding: 16, fill: AppTheme.surface) {
+        VStack(alignment: .leading, spacing: 12) {
+
+            // Header
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(AppTheme.surfaceMuted)
-                        .frame(width: 44, height: 44)
-                    Image(systemName: post.avatarSystemName)
-                        .foregroundStyle(AppTheme.accent)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(post.username)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                    Text(post.relativeTimestamp)
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.textTertiary)
-                }
-
-                Spacer(minLength: 0)
-
-                AppTag(title: post.gameTitle, systemImage: "gamecontroller.fill")
-            }
-
-            ZStack(alignment: .bottomLeading) {
-                Image(post.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 220)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                Circle()
+                    .fill(Color.black.opacity(0.25))
+                    .frame(width: 40, height: 40)
                     .overlay(
-                        AppTheme.heroGradient
-                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        Circle().stroke(
+                            LinearGradient(colors: [Color.purple, Color.blue],
+                                           startPoint: .topLeading,
+                                           endPoint: .bottomTrailing),
+                            lineWidth: 1
+                        )
+                    )
+                    .overlay(
+                        Image(systemName: post.avatarSystemName)
+                            .foregroundStyle(.white)
                     )
 
-                Text(post.caption)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .padding(16)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(post.username)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+
+                    Text(post.gameTitle)
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+
+                Spacer()
             }
 
-            HStack(spacing: 12) {
-                FeedStatButton(
-                    systemImage: post.isLiked ? "heart.fill" : "heart",
-                    title: "\(post.likeCount)",
-                    tint: post.isLiked ? AppTheme.danger : AppTheme.textPrimary,
-                    action: onLikeToggle
-                )
-
-                FeedStatButton(
-                    systemImage: "bubble.right.fill",
-                    title: "\(post.commentCount)",
-                    tint: AppTheme.accent,
-                    action: { }
-                )
-
-                Spacer(minLength: 0)
-
-                Text("Active")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.textSecondary)
+            // Image
+            Group {
+                if let image = post.uiImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Image(post.imageName)
+                        .resizable()
+                        .scaledToFill()
+                }
             }
-        }
-    }
-}
-
-private struct FeedStatButton: View {
-    let systemImage: String
-    let title: String
-    let tint: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                Text(title)
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(tint)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(AppTheme.surfaceMuted)
+            .frame(height: 220)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(colors: [Color.purple, Color.blue],
+                                       startPoint: .topLeading,
+                                       endPoint: .bottomTrailing),
+                        lineWidth: 2
+                    )
             )
+
+            // Caption
+            if !post.caption.isEmpty {
+                Text(post.caption)
+                    .foregroundStyle(.white)
+                    .font(.subheadline)
+            }
+
+            // Actions
+            HStack(spacing: 16) {
+                Button {
+                    post.isLiked.toggle()
+                    post.likeCount += post.isLiked ? 1 : -1
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: post.isLiked ? "heart.fill" : "heart")
+                            .foregroundStyle(post.isLiked ? .red : .white)
+
+                        Text("\(post.likeCount)")
+                            .foregroundStyle(.white)
+                            .font(.subheadline)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                HStack(spacing: 6) {
+                    Image(systemName: "bubble.right")
+                        .foregroundStyle(.white)
+
+                    Text("\(post.commentCount)")
+                        .foregroundStyle(.white)
+                        .font(.subheadline)
+                }
+
+                Spacer()
+
+                Text("Just now")
+                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.footnote)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black.opacity(0.25))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    LinearGradient(colors: [Color.purple, Color.blue],
+                                   startPoint: .topLeading,
+                                   endPoint: .bottomTrailing),
+                    lineWidth: 1.5
+                )
+        )
     }
 }
 
@@ -175,6 +199,10 @@ struct CreatePostView: View {
     @State private var selectedGame = "Fortnite"
     @State private var selectedImage = "Image"
 
+    // ✅ Image Picker State
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedUIImage: UIImage?
+
     let games = ["Fortnite", "Apex Legends", "Valorant", "Call of Duty"]
 
     var onPost: (FeedPost) -> Void
@@ -183,24 +211,44 @@ struct CreatePostView: View {
         NavigationView {
             VStack(spacing: 16) {
 
-                // Image preview (placeholder)
-                Image(selectedImage)
-                    .resizable()
-                    .scaledToFill()
+                // ✅ Image Picker
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    Group {
+                        if let image = selectedUIImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Image(selectedImage)
+                                .resizable()
+                                .scaledToFill()
+                                .overlay(
+                                    Text("Tap to select image")
+                                        .foregroundStyle(.white)
+                                        .font(.caption)
+                                        .padding(6)
+                                        .background(Color.black.opacity(0.6))
+                                        .cornerRadius(8),
+                                    alignment: .bottom
+                                )
+                        }
+                    }
                     .frame(height: 200)
                     .clipped()
                     .cornerRadius(12)
+                }
 
                 // Caption
-                TextField("", text: $caption, prompt: Text("Write a caption...")
-                    .foregroundStyle(.white.opacity(0.6)) 
+                TextField("", text: $caption,
+                          prompt: Text("Write a caption...")
+                            .foregroundStyle(.white.opacity(0.6))
                 )
                 .foregroundStyle(.white)
                 .padding()
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
 
-                // Game dropdown
+                // Game picker
                 Picker("Select Game", selection: $selectedGame) {
                     ForEach(games, id: \.self) { game in
                         Text(game)
@@ -232,7 +280,8 @@ struct CreatePostView: View {
                             caption: caption,
                             isLiked: false,
                             likeCount: 0,
-                            commentCount: 0
+                            commentCount: 0,
+                            uiImage: selectedUIImage // ✅ pass picked image
                         )
 
                         onPost(newPost)
@@ -241,11 +290,19 @@ struct CreatePostView: View {
                 }
             }
         }
+        // ✅ Load selected image
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data) {
+                    selectedUIImage = uiImage
+                }
+            }
+        }
     }
 }
 
-// MARK: - Preview
+// Preview
 #Preview {
     FeedView()
-        .environmentObject(AuthViewModel())
 }
