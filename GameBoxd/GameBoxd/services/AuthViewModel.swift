@@ -9,13 +9,19 @@ final class AuthViewModel: ObservableObject {
     @Published var currentUser: User?
 
     private let service: AuthServicing
+    private let appStateService: AppStateServicing
 
-    init(service: AuthServicing? = nil) {
+    init(service: AuthServicing? = nil, appStateService: AppStateServicing? = nil) {
         let resolvedService = service ?? AuthService.shared
+        let resolvedAppStateService = appStateService ?? AppStateService.shared
         self.service = resolvedService
+        self.appStateService = resolvedAppStateService
         let user = resolvedService.currentUser()
         self.currentUser = user
         self.isAuthenticated = user != nil
+        if let user {
+            resolvedAppStateService.ensureStateExists(for: user)
+        }
     }
 
     func login(email: String, password: String) {
@@ -35,7 +41,16 @@ final class AuthViewModel: ObservableObject {
         try? service.updateUsername(newUsername)
         currentUser = service.currentUser()
     }
+
+    func updateProfile(username: String, bio: String, about: String) {
+        try? service.updateUsername(username)
+        currentUser = service.currentUser()
+        appStateService.updateProfile(bio: bio, about: about, for: currentUser)
+        appStateService.recordProfileUpdated(for: currentUser)
+    }
+
     func logout() {
+        appStateService.recordLogout(for: currentUser)
         service.logout()
         currentUser = nil
         isAuthenticated = false
@@ -48,6 +63,8 @@ final class AuthViewModel: ObservableObject {
         errorMessage = nil
         do {
             let user = try await action()
+            appStateService.ensureStateExists(for: user)
+            appStateService.recordLogin(for: user)
             currentUser = user
             isAuthenticated = true
             completion?()
@@ -66,7 +83,8 @@ final class AuthViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            _ = try await service.register(username: username, email: email, password: password)
+            let user = try await service.register(username: username, email: email, password: password)
+            appStateService.ensureStateExists(for: user)
             // Do NOT mark as authenticated here – user should go back to Login
             completion?()
         } catch {

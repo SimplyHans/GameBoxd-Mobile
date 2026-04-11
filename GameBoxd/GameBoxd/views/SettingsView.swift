@@ -1,90 +1,75 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct SettingsView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
-    @State private var notificationsEnabled: Bool = true
-    @State private var darkModeEnabled: Bool = true
-    @State private var autoPlayVideos: Bool = false
-    @State private var showAbout: Bool = false
+    @EnvironmentObject private var authViewModel: AuthViewModel
+    @State private var notificationsEnabled = true
+    @State private var darkModeEnabled = true
+    @State private var autoPlayVideos = false
+    @State private var showAbout = false
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                AppBackground {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Settings")
-                                .foregroundStyle(.white)
-                                .font(.largeTitle.weight(.bold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 8)
+            AppBackground {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        AppScreenHeader(
+                            eyebrow: "Preferences",
+                            title: "Settings",
+                            subtitle: "Tune notifications, playback, and account controls."
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
-                            SettingsSection(title: "Preferences") {
-                                SettingsToggleRow(title: "Enable Notifications", isOn: $notificationsEnabled)
-                                SettingsToggleRow(title: "Dark Mode", isOn: $darkModeEnabled)
-                                SettingsToggleRow(title: "Autoplay Videos", isOn: $autoPlayVideos)
-                            }
-                            .padding(.horizontal, 16)
-
-                            SettingsSection(title: "Account") {
-                                NavigationLink {
-                                    EditProfileView(
-                                        currentUsername: "Hanson",
-                                        currentBio: "Gamer. Competitive.",
-                                        currentAbout: "Loves shooters and team games."
-                                    ) { _, _, _ in }
-                                } label: {
-                                    SettingsNavRow(title: "Edit Profile", systemImage: "person.circle")
-                                };                                SettingsNavRow(title: "Privacy", systemImage: "lock.shield")
-                                Button {
-                                    showAbout = true
-                                } label: {
-                                    SettingsNavRow(title: "About", systemImage: "info.circle")
-                                }
-                                .buttonStyle(.plain)
-
-                                Button {
-                                    authViewModel.logout()
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "arrow.backward.square")
-                                            .foregroundStyle(.red)
-                                        Text("Log Out")
-                                            .foregroundStyle(.red)
-                                            .font(.body.weight(.semibold))
-                                        Spacer()
-                                    }
-                                    .padding(10)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(Color.red.opacity(0.15))
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            .padding(.horizontal, 16)
-
-                            Spacer(minLength: 24)
+                        SettingsSection(title: "Experience") {
+                            SettingsToggleRow(title: "Enable Notifications", subtitle: "Stay updated on invites and social activity.", isOn: $notificationsEnabled)
+                            SettingsToggleRow(title: "Dark Mode", subtitle: "Keep the app in the dark product theme.", isOn: $darkModeEnabled)
+                            SettingsToggleRow(title: "Autoplay Videos", subtitle: "Start video highlights automatically in feed.", isOn: $autoPlayVideos)
                         }
+                        .padding(.horizontal, 20)
+
+                        SettingsSection(title: "Account") {
+                            Button {
+                                showAbout = true
+                            } label: {
+                                SettingsNavRow(title: "About GameBoxd", subtitle: "What the app is built for.", systemImage: "info.circle")
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                authViewModel.logout()
+                            } label: {
+                                SettingsNavRow(
+                                    title: "Log Out",
+                                    subtitle: "Sign out of the current profile.",
+                                    systemImage: "rectangle.portrait.and.arrow.right",
+                                    tint: AppTheme.danger
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 20)
                     }
+                    .padding(.bottom, 32)
                 }
             }
             .sheet(isPresented: $showAbout) {
-                ZStack {
-                    AppBackground {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("About GameBoxd")
-                                .foregroundStyle(Color.white)
-                                .font(.title.weight(.bold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Text("GameBoxd is your hub for tracking games, sharing highlights, and discovering what to play next.")
-                                .foregroundStyle(Color.white.opacity(0.85))
+                AppBackground {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AppScreenHeader(
+                            eyebrow: "About",
+                            title: "GameBoxd",
+                            subtitle: "Track games, save favorites, and keep your personal gaming history organized."
+                        )
+
+                        AppSurface(fill: AppTheme.surfaceRaised) {
+                            Text("This version focuses on a cleaner product experience with a strong home dashboard, connected detail flows, and a consistent visual system across the app.")
                                 .font(.body)
-                            Spacer()
+                                .foregroundStyle(AppTheme.textSecondary)
                         }
-                        .padding(20)
+
+                        Spacer()
                     }
+                    .padding(20)
                 }
                 .presentationDetents([.medium, .large])
             }
@@ -94,71 +79,97 @@ struct SettingsView: View {
 
 private struct SettingsSection<Content: View>: View {
     let title: String
-    @ViewBuilder var content: Content
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        AppSurface(fill: AppTheme.surface) {
             Text(title)
-                .foregroundStyle(.white)
                 .font(.headline.weight(.bold))
-            VStack(spacing: 10) {
+                .foregroundStyle(AppTheme.textPrimary)
+
+            VStack(spacing: 12) {
                 content
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.black.opacity(0.25))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(
-                        LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1.5
-                    )
-            )
         }
     }
 }
 
 private struct SettingsToggleRow: View {
     let title: String
+    let subtitle: String
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack {
-            Text(title)
-                .foregroundStyle(.white)
-                .font(.body)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .font(.body.weight(.semibold))
+
+                Text(subtitle)
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .font(.caption)
+            }
+
             Spacer()
+
             Toggle("", isOn: $isOn)
                 .labelsHidden()
+                .tint(AppTheme.accent)
         }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppTheme.surfaceMuted)
+        )
     }
 }
 
 private struct SettingsNavRow: View {
     let title: String
+    let subtitle: String
     let systemImage: String
+    var tint: Color = AppTheme.textPrimary
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .foregroundStyle(.white)
-            Text(title)
-                .foregroundStyle(.white)
-                .font(.body)
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(AppTheme.surfaceMuted)
+                    .frame(width: 42, height: 42)
+                Image(systemName: systemImage)
+                    .foregroundStyle(tint)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .foregroundStyle(tint)
+                    .font(.body.weight(.semibold))
+
+                Text(subtitle)
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .font(.caption)
+            }
+
             Spacer()
+
             Image(systemName: "chevron.right")
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(AppTheme.textTertiary)
         }
-        .padding(10)
+        .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.black.opacity(0.2))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppTheme.surfaceMuted)
         )
     }
 }
 
 #Preview {
     SettingsView()
+        .environmentObject(AuthViewModel())
 }

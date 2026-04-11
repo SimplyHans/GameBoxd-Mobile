@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 import SwiftUI
 
 struct HomeView: View {
@@ -8,47 +8,81 @@ struct HomeView: View {
     @State private var isShowingNotifications = false
     @State private var isShowingSettings = false
 
+    private let service: HomeServicing = HomeService.shared
+
+    private var username: String {
+        authViewModel.currentUser?.username ?? NSLocalizedString("player.one", comment: "Default username")
+    }
+
+    private var recentGames: [HomeGame] {
+        homeViewModel.sections.first(where: { $0.id == "recent" })?.items ?? []
+    }
+
+    private var favoriteCount: Int {
+        service.allGames().filter { homeViewModel.isFavorite($0, for: authViewModel.currentUser) }.count
+    }
+
+    private var trackedHours: Int {
+        service.allGames().reduce(0) { $0 + $1.hoursPlayed }
+    }
+
     var body: some View {
         NavigationStack {
             AppBackground {
-                VStack(spacing: 0) {
-                    header
-                        .zIndex(1)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        header
 
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            if let featuredGame = homeViewModel.featuredGame {
-                                FeaturedHero(game: featuredGame) {
-                                    homeViewModel.selectedGame = featuredGame
-                                }
-                                .padding(.horizontal, 16)
-                            }
+                        overviewPanel
 
-                            ForEach(homeViewModel.sections) { section in
-                                VStack(alignment: .leading, spacing: 12) {
-                                    SectionHeader(
-                                        title: section.title,
-                                        subtitle: section.subtitle,
-                                        action: { selectedSection = section }
-                                    )
-                                    .padding(.horizontal, 16)
+                        if let featuredGame = homeViewModel.featuredGame {
+                            featuredSection(game: featuredGame)
+                        }
 
-                                    HorizontalGamesRow(items: section.items) { game in
-                                        homeViewModel.selectedGame = game
+                        if let recentGame = recentGames.first {
+                            continuePlayingCard(game: recentGame)
+                        }
+
+                        ForEach(homeViewModel.sections) { section in
+                            VStack(alignment: .leading, spacing: 14) {
+                                AppSectionHeader(title: section.title, subtitle: section.subtitle) {
+                                    Button {
+                                        selectedSection = section
+                                    } label: {
+                                        Text(NSLocalizedString("see.all", comment: "See all button title"))
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(AppTheme.accent)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                Capsule()
+                                                    .fill(AppTheme.accent.opacity(0.12))
+                                            )
                                     }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, 20)
+
+                                HorizontalGamesRow(items: section.items) { game in
+                                    homeViewModel.selectedGame = game
                                 }
                             }
-
-                            Spacer(minLength: 24)
                         }
                     }
+                    .padding(.top, 12)
+                    .padding(.bottom, 32)
                 }
             }
             .task(id: authViewModel.currentUser?.id) {
-                homeViewModel.load(for: authViewModel.currentUser)
+                await homeViewModel.load(for: authViewModel.currentUser)
             }
             .refreshable {
                 await homeViewModel.refresh(for: authViewModel.currentUser)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .appStateDidChange)) { _ in
+                Task {
+                    await homeViewModel.refresh(for: authViewModel.currentUser, forceRemoteSync: false)
+                }
             }
             .sheet(item: $homeViewModel.selectedGame) { game in
                 GameDetailsSheet(
@@ -81,103 +115,110 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Welcome back,")
-                    .foregroundStyle(.white.opacity(0.8))
-                    .font(.subheadline)
-
-                Text(authViewModel.currentUser?.username ?? "Player One")
-                    .foregroundStyle(.white)
-                    .font(.largeTitle.weight(.bold))
-
-                Text(homeViewModel.isLoading ? "Refreshing your dashboard..." : "Track your games and jump back in.")
-                    .foregroundStyle(.white.opacity(0.72))
-                    .font(.footnote)
-            }
-
-            Spacer()
-
-            HStack(spacing: 12) {
+        AppScreenHeader(
+            eyebrow: NSLocalizedString("welcome.back", comment: "Welcome back greeting"),
+            title: username,
+            subtitle: homeViewModel.isLoading
+                ? NSLocalizedString("refreshing.dashboard", comment: "Refreshing dashboard message")
+                : NSLocalizedString("track.games", comment: "Track your games subtitle")
+        ) {
+            HStack(spacing: 10) {
                 Button {
                     isShowingNotifications = true
                 } label: {
-                    HeaderIcon(systemName: "bell", badgeCount: homeViewModel.notificationCount)
+                    AppIconBadge(systemName: "bell", badgeCount: homeViewModel.notificationCount)
                 }
                 .buttonStyle(.plain)
 
                 Button {
                     isShowingSettings = true
                 } label: {
-                    HeaderIcon(systemName: "gearshape", badgeCount: 0)
+                    AppIconBadge(systemName: "slider.horizontal.3", tint: AppTheme.textPrimary)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.horizontal, 20)
     }
-}
 
-private struct HeaderIcon: View {
-    let systemName: String
-    let badgeCount: Int
-
-    var body: some View {
-        Circle()
-            .fill(Color.black.opacity(0.25))
-            .frame(width: 40, height: 40)
-            .overlay(
-                Image(systemName: systemName)
-                    .foregroundStyle(.white)
+    private var overviewPanel: some View {
+        AppSurface(fill: AppTheme.surfaceRaised) {
+            AppSectionHeader(
+                title: "Your dashboard",
+                subtitle: "Everything important in one place."
             )
-            .overlay(
-                Circle().stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1
+
+            HStack(spacing: 12) {
+                AppMetricBadge(title: "Library", value: "\(service.allGames().count)")
+                AppMetricBadge(title: "Favorites", value: "\(favoriteCount)", emphasize: true)
+                AppMetricBadge(title: "Hours", value: compactHours(trackedHours))
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func featuredSection(game: HomeGame) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AppSectionHeader(
+                title: "Editor spotlight",
+                subtitle: "A lead pick for today."
+            )
+
+            FeaturedHero(game: game) {
+                homeViewModel.selectedGame = game
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func continuePlayingCard(game: HomeGame) -> some View {
+        Button {
+            homeViewModel.selectedGame = game
+        } label: {
+            AppSurface(fill: AppTheme.surfaceRaised) {
+                AppSectionHeader(
+                    title: "Continue playing",
+                    subtitle: "Jump back into your latest session."
                 )
-            )
-            .overlay(alignment: .topTrailing) {
-                if badgeCount > 0 {
-                    Text("\(badgeCount)")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.red))
-                        .offset(x: 4, y: -4)
+
+                HStack(spacing: 14) {
+                    GameArtworkView(game: game)
+                        .frame(width: 110, height: 110)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        AppTag(title: game.genres.first ?? game.platform, systemImage: "gamecontroller.fill")
+
+                        Text(game.title)
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(AppTheme.textPrimary)
+                            .multilineTextAlignment(.leading)
+
+                        Text(game.shortDescription)
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .lineLimit(2)
+
+                        HStack(spacing: 8) {
+                            AppTag(title: "\(game.hoursPlayed)h tracked", tint: AppTheme.success)
+                            AppTag(title: "\(formatRating(game.rating)) rating", tint: AppTheme.accent)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
                 }
             }
-    }
-}
-
-struct SectionHeader: View {
-    let title: String
-    let subtitle: String
-    let action: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(title)
-                    .foregroundStyle(.white)
-                    .font(.title2.weight(.bold))
-
-                Spacer()
-
-                Button(action: action) {
-                    Text("See all")
-                        .foregroundStyle(.white.opacity(0.8))
-                        .font(.subheadline.weight(.medium))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Text(subtitle)
-                .foregroundStyle(.white.opacity(0.72))
-                .font(.footnote)
-                .fixedSize(horizontal: false, vertical: true)
         }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
+    }
+
+    private func compactHours(_ hours: Int) -> String {
+        if hours >= 1000 {
+            return String(format: "%.1fk", Double(hours) / 1000.0)
+        }
+        return "\(hours)"
     }
 }
 
@@ -188,55 +229,55 @@ struct FeaturedHero: View {
     var body: some View {
         Button(action: action) {
             ZStack(alignment: .bottomLeading) {
-                Image(game.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 220)
+                GameArtworkView(game: game)
+                    .frame(height: 320)
                     .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                     .overlay(
-                        LinearGradient(
-                            colors: [Color.clear, Color.black.opacity(0.7)],
-                            startPoint: .center,
-                            endPoint: .bottom
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        AppTheme.heroGradient
+                            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(
-                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                lineWidth: 2
-                            )
+                        RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            .stroke(AppTheme.strongStroke, lineWidth: 1)
                     )
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Featured today")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.75))
+                VStack(alignment: .leading, spacing: 12) {
+                    AppTag(title: "Featured today", systemImage: "sparkles")
 
                     Text(game.title)
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppTheme.textPrimary)
+                        .multilineTextAlignment(.leading)
 
-                    Text("\(game.platform) ΓÇó \(game.releaseYear)")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.85))
+                    Text("\(game.platform) • \(game.releaseYear)")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppTheme.textSecondary)
 
                     Text(game.shortDescription)
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.85))
-                        .lineLimit(2)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.textPrimary.opacity(0.88))
+                        .lineLimit(3)
 
-                    Text("Open details")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.14))
-                        .clipShape(Capsule())
+                    HStack(spacing: 10) {
+                        AppTag(title: "\(formatRating(game.rating)) rating", tint: AppTheme.accent)
+                        AppTag(title: game.genres.first ?? "Action", tint: AppTheme.success)
+                    }
+
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.up.right")
+                        Text(NSLocalizedString("open.details", comment: "Open details button title"))
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.backgroundBase)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(AppTheme.textPrimary)
+                    )
                 }
-                .padding(18)
+                .padding(24)
             }
         }
         .buttonStyle(.plain)
@@ -249,19 +290,23 @@ struct HorizontalGamesRow: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
+            LazyHStack(alignment: .top, spacing: 20) {
                 ForEach(items) { item in
                     Button {
                         onSelect(item)
                     } label: {
                         GameCard(game: item)
-                            .frame(width: 148)
+                            .frame(width: 220, height: 336, alignment: .top)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
+            .scrollTargetLayout()
+            .padding(.horizontal, 20)
         }
+        .scrollTargetBehavior(.viewAligned)
+        .frame(height: 346)
     }
 }
 
@@ -269,33 +314,45 @@ struct GameCard: View {
     let game: HomeGame
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Image(game.imageName)
-                .resizable()
-                .aspectRatio(3 / 4, contentMode: .fill)
-                .frame(height: 160)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(
-                            LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: 2
-                        )
-                )
+        AppSurface(cornerRadius: 24, padding: 12, fill: AppTheme.surface) {
+            ZStack(alignment: .topLeading) {
+                GameArtworkView(game: game)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 226)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
+                AppTag(title: game.genres.first ?? game.platform, tint: AppTheme.textPrimary)
+                    .padding(10)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
                 Text(game.title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(AppTheme.textPrimary)
                     .lineLimit(1)
 
-                Text("\(game.rating, specifier: "%.1f") Γÿà ΓÇó \(game.platform)")
+                Text(game.shortDescription)
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.75))
-                    .lineLimit(1)
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .lineLimit(2)
+
+                HStack {
+                    Text("\(game.rating, specifier: "%.1f")")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(AppTheme.accent)
+
+                    Text("•")
+                        .foregroundStyle(AppTheme.textTertiary)
+
+                    Text(game.platform)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(1)
+                }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -305,59 +362,57 @@ private struct HomeSectionListView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                AppBackground {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(section.subtitle)
-                                .foregroundStyle(.white.opacity(0.8))
-                                .font(.subheadline)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 8)
+            AppBackground {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AppScreenHeader(
+                            eyebrow: "Collection",
+                            title: section.title,
+                            subtitle: section.subtitle
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
+                        VStack(spacing: 14) {
                             ForEach(section.items) { game in
                                 Button {
                                     onSelect(game)
                                 } label: {
-                                    HStack(spacing: 12) {
-                                        Image(game.imageName)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 68, height: 68)
-                                            .clipped()
-                                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    AppSurface(cornerRadius: 22, padding: 14, fill: AppTheme.surface) {
+                                        HStack(spacing: 14) {
+                                            GameArtworkView(game: game)
+                                                .frame(width: 82, height: 82)
+                                                .clipped()
+                                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(game.title)
-                                                .font(.headline.weight(.semibold))
-                                                .foregroundStyle(.white)
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text(game.title)
+                                                    .font(.headline.weight(.bold))
+                                                    .foregroundStyle(AppTheme.textPrimary)
 
-                                            Text(game.shortDescription)
-                                                .font(.subheadline)
-                                                .foregroundStyle(.white.opacity(0.78))
-                                                .lineLimit(2)
+                                                Text(game.shortDescription)
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(AppTheme.textSecondary)
+                                                    .lineLimit(2)
+
+                                                HStack(spacing: 8) {
+                                                    AppTag(title: "\(formatRating(game.rating)) rating")
+                                                    AppTag(title: game.genres.first ?? game.platform, tint: AppTheme.success)
+                                                }
+                                            }
+
+                                            Spacer(minLength: 0)
+
+                                            Image(systemName: "chevron.right")
+                                                .foregroundStyle(AppTheme.textTertiary)
                                         }
-
-                                        Spacer()
                                     }
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .fill(Color.black.opacity(0.25))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 1.5
-                                            )
-                                    )
                                 }
                                 .buttonStyle(.plain)
-                                .padding(.horizontal, 16)
                             }
                         }
-                        .padding(.bottom, 24)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
                     }
                 }
             }
@@ -367,102 +422,102 @@ private struct HomeSectionListView: View {
     }
 }
 
-private struct GameDetailsSheet: View {
+struct GameDetailsSheet: View {
     let game: HomeGame
     let isFavorite: Bool
     let onFavoriteToggle: () -> Void
     let onMarkPlayed: () -> Void
 
     var body: some View {
-        ZStack {
-            AppBackground {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Image(game.imageName)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 220)
+        AppBackground {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    ZStack(alignment: .bottomLeading) {
+                        GameArtworkView(game: game)
+                            .frame(height: 260)
                             .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .stroke(
-                                        LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                        lineWidth: 2
-                                    )
+                                AppTheme.heroGradient
+                                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .stroke(AppTheme.strongStroke, lineWidth: 1)
                             )
 
                         VStack(alignment: .leading, spacing: 8) {
+                            AppTag(title: game.genres.first ?? "Featured", systemImage: "gamecontroller.fill")
+
                             Text(game.title)
-                                .font(.largeTitle.weight(.bold))
-                                .foregroundStyle(.white)
+                                .font(.system(size: 30, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppTheme.textPrimary)
 
-                            Text("\(game.platform) ΓÇó \(game.releaseYear) ΓÇó \(game.rating, specifier: "%.1f") Γÿà")
+                            Text("\(game.platform) • \(game.releaseYear)")
                                 .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.75))
-
-                            Text(game.shortDescription)
-                                .font(.body)
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(AppTheme.textSecondary)
                         }
+                        .padding(22)
+                    }
+
+                    AppSurface(fill: AppTheme.surfaceRaised) {
+                        Text(game.shortDescription)
+                            .font(.body)
+                            .foregroundStyle(AppTheme.textPrimary.opacity(0.92))
 
                         HStack(spacing: 12) {
-                            DetailPill(title: "\(game.hoursPlayed) h", subtitle: "Tracked")
-                            DetailPill(title: "\(game.genres.count)", subtitle: "Genres")
+                            DetailPill(title: "\(game.hoursPlayed)h", subtitle: "Tracked")
+                            DetailPill(title: formatRating(game.rating), subtitle: "Rating", tint: AppTheme.accent)
+                            DetailPill(title: "\(game.genres.count)", subtitle: "Genres", tint: AppTheme.success)
                         }
 
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Text("Genres")
                                 .font(.headline.weight(.semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppTheme.textPrimary)
 
                             FlexibleTagRow(tags: game.genres)
                         }
-
-                        HStack(spacing: 12) {
-                            Button(action: onMarkPlayed) {
-                                Text("Mark as Played")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .fill(Color.black.opacity(0.25))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 1.5
-                                            )
-                                    )
-                            }
-                            .buttonStyle(.plain)
-
-                            Button(action: onFavoriteToggle) {
-                                Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                    .font(.title3.weight(.bold))
-                                    .foregroundStyle(isFavorite ? .red : .white)
-                                    .frame(width: 52, height: 52)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .fill(Color.black.opacity(0.25))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .stroke(
-                                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                                lineWidth: 1.5
-                                            )
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                        }
                     }
-                    .padding(16)
-                    .padding(.bottom, 24)
+
+                    HStack(spacing: 12) {
+                        Button(action: onMarkPlayed) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text(NSLocalizedString("mark.as.played", comment: "Mark as Played button title"))
+                            }
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(AppTheme.backgroundBase)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .fill(AppTheme.textPrimary)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: onFavoriteToggle) {
+                            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(isFavorite ? AppTheme.danger : AppTheme.textPrimary)
+                                .frame(width: 58, height: 54)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .fill(AppTheme.surfaceRaised)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .stroke(AppTheme.stroke, lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Spacer(minLength: 12)
                 }
+                .padding(20)
+                .padding(.bottom, 24)
             }
         }
     }
@@ -471,59 +526,45 @@ private struct GameDetailsSheet: View {
 private struct DetailPill: View {
     let title: String
     let subtitle: String
+    var tint: Color = AppTheme.textPrimary
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 5) {
             Text(title)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(.white)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(tint)
 
             Text(subtitle)
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(AppTheme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.black.opacity(0.25))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppTheme.surfaceMuted)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5
-                )
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(AppTheme.stroke, lineWidth: 1)
         )
     }
 }
 
-private struct FlexibleTagRow: View {
+struct FlexibleTagRow: View {
     let tags: [String]
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 8)], alignment: .leading, spacing: 8) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], alignment: .leading, spacing: 8) {
             ForEach(tags, id: \.self) { tag in
-                Text(tag)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        Capsule()
-                            .fill(Color.black.opacity(0.25))
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(
-                                LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                lineWidth: 1
-                            )
-                    )
+                AppTag(title: tag, tint: AppTheme.textPrimary)
             }
         }
     }
+}
+
+private func formatRating(_ rating: Double) -> String {
+    String(format: "%.1f", rating)
 }
 
 #Preview {
