@@ -1,10 +1,3 @@
-//
-//  ActivityLogStatCard.swift
-//  GameBoxd
-//
-//  Compact stat card for Activity Log and Badges screens.
-//
-
 import SwiftUI
 
 struct ActivityLogStatCard: View {
@@ -12,35 +5,7 @@ struct ActivityLogStatCard: View {
     let label: String
 
     var body: some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(.white)
-            Text(label)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.8))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(red: 24/255, green: 28/255, blue: 44/255))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0, green: 219/255, blue: 255/255),
-                            Color.purple
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-        )
+        AppMetricBadge(title: label, value: value, emphasize: true)
     }
 }
 
@@ -53,23 +18,18 @@ struct FilterPill: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? .white : Color.white.opacity(0.6))
+                .foregroundStyle(isSelected ? AppTheme.backgroundBase : AppTheme.textSecondary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(isSelected ? Color.purple : Color(red: 15/255, green: 15/255, blue: 25/255))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(
-                    isSelected
-                        ? Color(red: 125/255, green: 211/255, blue: 252/255)
-                        : Color.white.opacity(0.2),
-                    lineWidth: isSelected ? 2 : 1
+                .background(
+                    Capsule()
+                        .fill(isSelected ? AppTheme.textPrimary : AppTheme.surfaceMuted)
                 )
-        )
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? AppTheme.textPrimary.opacity(0.2) : AppTheme.stroke, lineWidth: 1)
+                )
+        }
         .buttonStyle(.plain)
     }
 }
@@ -79,53 +39,47 @@ struct ActivityCard: View {
     let activityText: String
     let timestamp: String
     let imageName: String
-    let borderAccent: Color
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 64, height: 64)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(borderAccent.opacity(0.8), lineWidth: 1.5)
-                )
+        AppSurface(cornerRadius: 22, padding: 14, fill: AppTheme.surface) {
+            HStack(alignment: .top, spacing: 14) {
+                ZStack(alignment: .bottomTrailing) {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 70, height: 82)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(gameTitle)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Text(activityText)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .lineLimit(2)
-                Text(timestamp)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
+                    Circle()
+                        .fill(AppTheme.textPrimary)
+                        .frame(width: 18, height: 18)
+                        .overlay(
+                            Circle()
+                                .fill(AppTheme.accent)
+                                .frame(width: 8, height: 8)
+                        )
+                        .offset(x: 4, y: 4)
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(gameTitle)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(AppTheme.textPrimary)
+                        .lineLimit(1)
+
+                    Text(activityText)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(2)
+
+                    Text(timestamp)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textTertiary)
+                }
+
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer(minLength: 0)
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(red: 24/255, green: 28/255, blue: 44/255))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [borderAccent.opacity(0.6), Color.purple.opacity(0.4)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-        )
     }
 }

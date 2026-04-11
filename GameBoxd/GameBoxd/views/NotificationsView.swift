@@ -1,94 +1,102 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct NotificationsView: View {
-    @State private var items: [NotificationItem] = NotificationItem.sample
+    @EnvironmentObject private var authViewModel: AuthViewModel
+    @State private var items: [PlayerNotificationItem] = []
+
+    private let appStateService: AppStateServicing = AppStateService.shared
+
+    private var unreadCount: Int {
+        items.filter { !$0.isRead }.count
+    }
 
     var body: some View {
-        ZStack {
+        NavigationStack {
             AppBackground {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Notifications")
-                            .foregroundStyle(.white)
-                            .font(.largeTitle.weight(.bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        AppScreenHeader(
+                            eyebrow: "Inbox",
+                            title: "Notifications",
+                            subtitle: "Alerts now come from your real activity across the app."
+                        ) {
+                            AppTag(
+                                title: unreadCount == 0 ? "All caught up" : "\(unreadCount) unread",
+                                systemImage: "bell.fill"
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
-                        VStack(spacing: 12) {
-                            ForEach(items) { item in
-                                NotificationRow(item: item)
-                                    .padding(.horizontal, 16)
+                        if items.isEmpty {
+                            AppEmptyState(
+                                title: "No notifications yet",
+                                message: "As you favorite games, log sessions, and update your profile, alerts will appear here.",
+                                systemImage: "bell.slash.fill"
+                            )
+                            .padding(.horizontal, 20)
+                        } else {
+                            VStack(spacing: 14) {
+                                ForEach(items) { item in
+                                    NotificationRow(item: item)
+                                        .padding(.horizontal, 20)
+                                }
                             }
                         }
-                        .padding(.bottom, 24)
                     }
+                    .padding(.bottom, 32)
                 }
+            }
+            .task {
+                appStateService.markAllNotificationsRead(for: authViewModel.currentUser)
+                reloadItems()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .appStateDidChange)) { _ in
+                reloadItems()
             }
         }
     }
-}
 
-struct NotificationItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let message: String
-    let timeAgo: String
-
-    static let sample: [NotificationItem] = [
-        NotificationItem(title: "Friend Request", message: "Maya sent you a friend request.", timeAgo: "2m"),
-        NotificationItem(title: "Match Invite", message: "Alex invited you to a Valorant match.", timeAgo: "15m"),
-        NotificationItem(title: "Daily Reward", message: "Your daily reward is ready!", timeAgo: "1h")
-    ]
+    private func reloadItems() {
+        items = appStateService.notifications(for: authViewModel.currentUser)
+    }
 }
 
 struct NotificationRow: View {
-    let item: NotificationItem
+    let item: PlayerNotificationItem
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Circle()
-                .fill(Color.black.opacity(0.25))
-                .frame(width: 36, height: 36)
-                .overlay(
-                    Circle().stroke(
-                        LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1
-                    )
-                )
-                .overlay(
-                    Image(systemName: "bell")
-                        .foregroundStyle(.white)
-                )
+        AppSurface(cornerRadius: 22, padding: 14, fill: AppTheme.surface) {
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(AppTheme.surfaceMuted)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: item.systemImage)
+                        .foregroundStyle(item.isRead ? AppTheme.textSecondary : AppTheme.accent)
+                }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
-                    .foregroundStyle(.white)
-                    .font(.headline)
-                Text(item.message)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .font(.subheadline)
-                Text(item.timeAgo)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .font(.footnote)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .foregroundStyle(AppTheme.textPrimary)
+                        .font(.headline.weight(.bold))
+
+                    Text(item.message)
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .font(.subheadline)
+
+                    Text(item.relativeTimestamp)
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .font(.caption)
+                }
+
+                Spacer(minLength: 0)
             }
-            Spacer()
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.black.opacity(0.25))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5
-                )
-        )
     }
 }
 
 #Preview {
     NotificationsView()
+        .environmentObject(AuthViewModel())
 }

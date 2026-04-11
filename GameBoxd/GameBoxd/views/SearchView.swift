@@ -1,124 +1,201 @@
-//
-//  SearchView.swift
-//  GameBoxd
-//
-//  Created by Hussein on 2026-02-05.
-//
-
 import Foundation
 import SwiftUI
 
-struct GameLog: Identifiable {
-    let id = UUID()
-    let title: String
-    let imageName: String
-    let hours: Int
-    let lastPlayed: String
-}
+struct SearchView: View {
+    @EnvironmentObject private var authViewModel: AuthViewModel
+    @State private var query = ""
+    @State private var catalog: [HomeGame] = []
+    @State private var displayedGames: [HomeGame] = []
+    @State private var selectedGame: HomeGame?
 
-struct GameRow: View {
-    let game: GameLog
+    private let service: HomeServicing = HomeService.shared
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trendingGames: [HomeGame] {
+        catalog.filter(\.isTrending)
+    }
+
+    private var quickGenres: [String] {
+        Array(Set(catalog.flatMap(\.genres))).sorted().prefix(6).map { $0 }
+    }
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(game.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 56, height: 56)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        NavigationStack {
+            AppBackground {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        AppScreenHeader(
+                            eyebrow: "Discover",
+                            title: "Search",
+                            subtitle: trimmedQuery.isEmpty
+                                ? "Browse your catalog, trending picks, and genre shortcuts."
+                                : "\(displayedGames.count) results for \"\(trimmedQuery)\""
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(game.title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+                        SearchBar(text: $query)
+                            .padding(.horizontal, 20)
 
-                HStack(spacing: 8) {
-                    Text("\(game.hours)h played")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.75))
-                    Text("•")
-                        .foregroundStyle(.white.opacity(0.5))
-                    Text(game.lastPlayed)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.75))
+                        if trimmedQuery.isEmpty {
+                            discoverContent
+                        } else if displayedGames.isEmpty {
+                            AppEmptyState(
+                                title: "No matches yet",
+                                message: "Try another game title, platform, or genre keyword.",
+                                systemImage: "magnifyingglass"
+                            )
+                            .padding(.horizontal, 20)
+                        } else {
+                            VStack(spacing: 14) {
+                                ForEach(displayedGames) { game in
+                                    Button {
+                                        selectedGame = game
+                                    } label: {
+                                        GameRow(game: game)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                    .padding(.bottom, 32)
+                }
+            }
+            .task {
+                await refreshCatalogIfNeeded(force: false)
+                reloadGames()
+            }
+            .onChange(of: query) { _, _ in
+                reloadGames()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .homeServiceCatalogDidChange)) { _ in
+                reloadGames()
+            }
+            .sheet(item: $selectedGame) { game in
+                GameDetailsSheet(
+                    game: game,
+                    isFavorite: service.isFavorite(gameID: game.id, for: authViewModel.currentUser),
+                    onFavoriteToggle: {
+                        _ = service.toggleFavorite(gameID: game.id, for: authViewModel.currentUser)
+                        reloadGames()
+                    },
+                    onMarkPlayed: {
+                        _ = service.markPlayed(gameID: game.id, for: authViewModel.currentUser)
+                        reloadGames()
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    private var discoverContent: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 12) {
+                AppSectionHeader(
+                    title: "Browse by genre",
+                    subtitle: "Fast ways to jump into your library."
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(quickGenres, id: \.self) { genre in
+                            Button {
+                                query = genre
+                            } label: {
+                                AppTag(title: genre, systemImage: "tag.fill")
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+
+            VStack(alignment: .leading, spacing: 14) {
+                AppSectionHeader(
+                    title: "Trending right now",
+                    subtitle: "The games people keep checking."
+                )
+                .padding(.horizontal, 20)
+
+                HorizontalGamesRow(items: trendingGames) { game in
+                    selectedGame = game
                 }
             }
 
-            Spacer()
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.black.opacity(0.25))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5
+            VStack(alignment: .leading, spacing: 14) {
+                AppSectionHeader(
+                    title: "All games",
+                    subtitle: "Everything currently in your catalog."
                 )
-        )
+                .padding(.horizontal, 20)
+
+                VStack(spacing: 14) {
+                    ForEach(catalog) { game in
+                        Button {
+                            selectedGame = game
+                        } label: {
+                            GameRow(game: game)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private func refreshCatalogIfNeeded(force: Bool) async {
+        await HomeService.shared.refreshCatalogIfPossible(force: force)
+    }
+
+    private func reloadGames() {
+        catalog = service.allGames()
+        displayedGames = trimmedQuery.isEmpty ? catalog : service.searchGames(query: trimmedQuery)
     }
 }
 
-struct SearchView: View {
-    @State private var query: String = ""
-
-    // Demo data ΓÇô replace with real data source
-    @State private var allGames: [GameLog] = [
-        GameLog(title: "Fortnit", imageName: "Image", hours: 124, lastPlayed: "Yesterday"),
-        GameLog(title: "Apex Legends", imageName: "Image", hours: 87, lastPlayed: "2 days ago"),
-        GameLog(title: "Valorant", imageName: "Image", hours: 45, lastPlayed: "Last week"),
-        GameLog(title: "Overwatch 2", imageName: "Image", hours: 33, lastPlayed: "3 weeks ago"),
-        GameLog(title: "Rocket League", imageName: "Image", hours: 72, lastPlayed: "1 month ago")
-    ]
-
-    private var filteredGames: [GameLog] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return allGames }
-        return allGames.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
-    }
+struct GameRow: View {
+    let game: HomeGame
 
     var body: some View {
-        ZStack {
-            AppBackground {
-                VStack(spacing: 0) {
-                    // Header
-                    Text("Search")
-                        .foregroundStyle(.white)
-                        .font(.largeTitle.weight(.bold))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
+        AppSurface(cornerRadius: 22, padding: 14, fill: AppTheme.surface) {
+            HStack(spacing: 14) {
+                GameArtworkView(game: game)
+                    .frame(width: 72, height: 86)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-                    // Search field
-                    SearchBar(text: $query)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .padding(.bottom, 12)
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(game.title)
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(AppTheme.textPrimary)
 
-                    // Results
-                    if filteredGames.isEmpty {
-                        VStack(spacing: 12) {
-                            Text("No results")
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.headline)
-                            Text("Try a different game name.")
-                                .foregroundStyle(.white.opacity(0.7))
+                            Text(game.shortDescription)
                                 .font(.subheadline)
+                                .foregroundStyle(AppTheme.textSecondary)
+                                .lineLimit(2)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .padding(.top, 40)
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                ForEach(filteredGames) { game in
-                                    GameRow(game: game)
-                                        .padding(.horizontal, 16)
-                                }
-                            }
-                            .padding(.bottom, 24)
+
+                        Spacer(minLength: 8)
+
+                        Text("\(game.rating, specifier: "%.1f")")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+
+                    HStack(spacing: 8) {
+                        AppTag(title: game.platform, systemImage: "desktopcomputer", tint: AppTheme.textPrimary)
+                        if let genre = game.genres.first {
+                            AppTag(title: genre, tint: AppTheme.success)
                         }
                     }
                 }
@@ -132,43 +209,33 @@ struct SearchBar: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.white.opacity(0.8))
+        AppInputContainer {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(AppTheme.textSecondary)
 
-            TextField("Search games", text: $text)
-                .textInputAutocapitalization(.words)
-                .disableAutocorrection(true)
-                .foregroundStyle(.white)
-                .focused($isFocused)
+                TextField("Search games, genres, or platforms", text: $text)
+                    .textInputAutocapitalization(.words)
+                    .disableAutocorrection(true)
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .focused($isFocused)
 
-            if !text.isEmpty {
-                Button {
-                    text = ""
-                    isFocused = false
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.white.opacity(0.8))
+                if !text.isEmpty {
+                    Button {
+                        text = ""
+                        isFocused = false
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.black.opacity(0.25))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(
-                    LinearGradient(colors: [Color.purple, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5
-                )
-        )
     }
 }
 
 #Preview {
     SearchView()
+        .environmentObject(AuthViewModel())
 }
