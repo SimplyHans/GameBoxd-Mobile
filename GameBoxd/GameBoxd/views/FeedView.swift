@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import PhotosUI
 
 struct FeedView: View {
     @State private var posts: [FeedPost] = FeedPost.sample
@@ -11,7 +12,7 @@ struct FeedView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
 
-                        // Header with + button
+                        // Header
                         HStack {
                             Text("Feed")
                                 .foregroundStyle(.white)
@@ -61,11 +62,12 @@ struct FeedPost: Identifiable {
     var isLiked: Bool
     var likeCount: Int
     var commentCount: Int
+    var uiImage: UIImage? // ✅ NEW
 
     static let sample: [FeedPost] = [
-        FeedPost(username: "Hanson", avatarSystemName: "person.fill", gameTitle: "Fortnite", imageName: "Image", caption: "New PR tonight!", isLiked: false, likeCount: 128, commentCount: 12),
-        FeedPost(username: "Maya", avatarSystemName: "person.crop.circle.fill", gameTitle: "Apex Legends", imageName: "Image", caption: "Clutched a 1v3!", isLiked: true, likeCount: 342, commentCount: 29),
-        FeedPost(username: "Alex", avatarSystemName: "person.circle.fill", gameTitle: "Valorant", imageName: "Image", caption: "Practicing smokes.", isLiked: false, likeCount: 57, commentCount: 6)
+        FeedPost(username: "Hanson", avatarSystemName: "person.fill", gameTitle: "Fortnite", imageName: "Image", caption: "New PR tonight!", isLiked: false, likeCount: 128, commentCount: 12, uiImage: nil),
+        FeedPost(username: "Maya", avatarSystemName: "person.crop.circle.fill", gameTitle: "Apex Legends", imageName: "Image", caption: "Clutched a 1v3!", isLiked: true, likeCount: 342, commentCount: 29, uiImage: nil),
+        FeedPost(username: "Alex", avatarSystemName: "person.circle.fill", gameTitle: "Valorant", imageName: "Image", caption: "Practicing smokes.", isLiked: false, likeCount: 57, commentCount: 6, uiImage: nil)
     ]
 }
 
@@ -108,21 +110,29 @@ struct PostCard: View {
             }
 
             // Image
-            Image(post.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(height: 220)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(
-                            LinearGradient(colors: [Color.purple, Color.blue],
-                                           startPoint: .topLeading,
-                                           endPoint: .bottomTrailing),
-                            lineWidth: 2
-                        )
-                )
+            Group {
+                if let image = post.uiImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Image(post.imageName)
+                        .resizable()
+                        .scaledToFill()
+                }
+            }
+            .frame(height: 220)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(colors: [Color.purple, Color.blue],
+                                       startPoint: .topLeading,
+                                       endPoint: .bottomTrailing),
+                        lineWidth: 2
+                    )
+            )
 
             // Caption
             if !post.caption.isEmpty {
@@ -189,6 +199,10 @@ struct CreatePostView: View {
     @State private var selectedGame = "Fortnite"
     @State private var selectedImage = "Image"
 
+    // ✅ Image Picker State
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedUIImage: UIImage?
+
     let games = ["Fortnite", "Apex Legends", "Valorant", "Call of Duty"]
 
     var onPost: (FeedPost) -> Void
@@ -197,24 +211,44 @@ struct CreatePostView: View {
         NavigationView {
             VStack(spacing: 16) {
 
-                // Image preview (placeholder)
-                Image(selectedImage)
-                    .resizable()
-                    .scaledToFill()
+                // ✅ Image Picker
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    Group {
+                        if let image = selectedUIImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Image(selectedImage)
+                                .resizable()
+                                .scaledToFill()
+                                .overlay(
+                                    Text("Tap to select image")
+                                        .foregroundStyle(.white)
+                                        .font(.caption)
+                                        .padding(6)
+                                        .background(Color.black.opacity(0.6))
+                                        .cornerRadius(8),
+                                    alignment: .bottom
+                                )
+                        }
+                    }
                     .frame(height: 200)
                     .clipped()
                     .cornerRadius(12)
+                }
 
                 // Caption
-                TextField("", text: $caption, prompt: Text("Write a caption...")
-                    .foregroundStyle(.white.opacity(0.6)) 
+                TextField("", text: $caption,
+                          prompt: Text("Write a caption...")
+                            .foregroundStyle(.white.opacity(0.6))
                 )
                 .foregroundStyle(.white)
                 .padding()
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
 
-                // Game dropdown
+                // Game picker
                 Picker("Select Game", selection: $selectedGame) {
                     ForEach(games, id: \.self) { game in
                         Text(game)
@@ -246,7 +280,8 @@ struct CreatePostView: View {
                             caption: caption,
                             isLiked: false,
                             likeCount: 0,
-                            commentCount: 0
+                            commentCount: 0,
+                            uiImage: selectedUIImage // ✅ pass picked image
                         )
 
                         onPost(newPost)
@@ -255,10 +290,19 @@ struct CreatePostView: View {
                 }
             }
         }
+        // ✅ Load selected image
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data) {
+                    selectedUIImage = uiImage
+                }
+            }
+        }
     }
 }
 
-// MARK: - Preview
+// Preview
 #Preview {
     FeedView()
 }
