@@ -57,6 +57,11 @@ struct FeedView: View {
                 reloadPosts()
             }
         }
+        .sheet(isPresented: $showCreatePost) {
+            CreatePostView { newPost in
+                posts.insert(newPost, at: 0)
+            }
+        }
     }
 
     private func reloadPosts() {
@@ -64,6 +69,7 @@ struct FeedView: View {
     }
 }
 
+// MARK: - Post Card
 struct PostCard: View {
     let post: PlayerFeedPost
     let onLikeToggle: () -> Void
@@ -161,6 +167,84 @@ private struct FeedStatButton: View {
     }
 }
 
+// MARK: - Create Post Modal
+struct CreatePostView: View {
+    @Environment(\.dismiss) var dismiss
+
+    @State private var caption = ""
+    @State private var selectedGame = "Fortnite"
+    @State private var selectedImage = "Image"
+
+    let games = ["Fortnite", "Apex Legends", "Valorant", "Call of Duty"]
+
+    var onPost: (FeedPost) -> Void
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 16) {
+
+                // Image preview (placeholder)
+                Image(selectedImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 200)
+                    .clipped()
+                    .cornerRadius(12)
+
+                // Caption
+                TextField("", text: $caption, prompt: Text("Write a caption...")
+                    .foregroundStyle(.white.opacity(0.6)) 
+                )
+                .foregroundStyle(.white)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+
+                // Game dropdown
+                Picker("Select Game", selection: $selectedGame) {
+                    ForEach(games, id: \.self) { game in
+                        Text(game)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Spacer()
+            }
+            .padding()
+            .background(Color(red: 24/255, green: 28/255, blue: 44/255))
+            .navigationTitle("New Post")
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Post") {
+                        let newPost = FeedPost(
+                            username: "You",
+                            avatarSystemName: "person.fill",
+                            gameTitle: selectedGame,
+                            imageName: selectedImage,
+                            caption: caption,
+                            isLiked: false,
+                            likeCount: 0,
+                            commentCount: 0
+                        )
+
+                        onPost(newPost)
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Preview
 #Preview {
     FeedView()
         .environmentObject(AuthViewModel())
