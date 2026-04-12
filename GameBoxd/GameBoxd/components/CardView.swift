@@ -199,12 +199,21 @@ struct AppMetricBadge: View {
     let title: String
     let value: String
     var emphasize: Bool = false
+    var systemImage: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(value)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(emphasize ? AppTheme.accent : AppTheme.textPrimary)
+            HStack(alignment: .center, spacing: 8) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(emphasize ? AppTheme.accent : AppTheme.textTertiary)
+                }
+
+                Text(value)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(emphasize ? AppTheme.accent : AppTheme.textPrimary)
+            }
 
             Text(title)
                 .font(.caption)
