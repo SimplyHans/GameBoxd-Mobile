@@ -10,12 +10,19 @@ struct ProfileView: View {
     @State private var totalHours = 0
     @State private var favoriteCount = 0
     @State private var selectedGame: HomeGame?
+    @State private var avatarImage: UIImage?
 
     private let service: HomeServicing = HomeService.shared
     private let appStateService: AppStateServicing = AppStateService.shared
 
+    private let mostPlayedHours: [Int] = [312, 247, 189]
+
     private var username: String {
         authVM.currentUser?.username ?? "Player"
+    }
+
+    private var mostPlayedGames: [HomeGame] {
+        Array(service.allGames().prefix(3))
     }
 
     private var topGenres: [String] {
@@ -54,6 +61,9 @@ struct ProfileView: View {
                         aboutSection
                             .padding(.horizontal, 20)
 
+                        mostPlayedSection
+                            .padding(.horizontal, 20)
+
                         if !recentGames.isEmpty {
                             recentSection
                         }
@@ -70,21 +80,16 @@ struct ProfileView: View {
             }
             .task {
                 await refreshProfileData(forceRemoteSync: false)
+                avatarImage = appStateService.loadAvatar(for: authVM.currentUser)
             }
             .onReceive(NotificationCenter.default.publisher(for: .homeServiceCatalogDidChange)) { _ in
-                Task {
-                    await refreshProfileData(forceRemoteSync: false)
-                }
+                Task { await refreshProfileData(forceRemoteSync: false) }
             }
             .onReceive(NotificationCenter.default.publisher(for: .homeServiceUserStateDidChange)) { _ in
-                Task {
-                    await refreshProfileData(forceRemoteSync: false)
-                }
+                Task { await refreshProfileData(forceRemoteSync: false) }
             }
             .onReceive(NotificationCenter.default.publisher(for: .appStateDidChange)) { _ in
-                Task {
-                    await refreshProfileData(forceRemoteSync: false)
-                }
+                Task { await refreshProfileData(forceRemoteSync: false) }
             }
             .sheet(item: $selectedGame) { game in
                 GameDetailsSheet(
@@ -114,9 +119,18 @@ struct ProfileView: View {
                     Circle()
                         .stroke(AppTheme.stroke, lineWidth: 1)
                         .frame(width: 92, height: 92)
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 34, weight: .semibold))
-                        .foregroundStyle(AppTheme.accent)
+
+                    if let avatar = avatarImage {
+                        Image(uiImage: avatar)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 92, height: 92)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundStyle(AppTheme.accent)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -139,11 +153,13 @@ struct ProfileView: View {
                 EditProfileView(
                     currentUsername: username,
                     currentBio: bio,
-                    currentAbout: about
+                    currentAbout: about,
+                    currentUser: authVM.currentUser
                 ) { newName, newBio, newAbout in
                     authVM.updateProfile(username: newName, bio: newBio, about: newAbout)
                     bio = appStateService.profile(for: authVM.currentUser).bio
                     about = appStateService.profile(for: authVM.currentUser).about
+                    avatarImage = appStateService.loadAvatar(for: authVM.currentUser)
                 }
             } label: {
                 HStack {
@@ -179,6 +195,57 @@ struct ProfileView: View {
                 .foregroundStyle(AppTheme.textSecondary)
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var mostPlayedSection: some View {
+        AppSurface(fill: AppTheme.surfaceRaised) {
+            AppSectionHeader(
+                title: "Most played",
+                subtitle: "Your top three by hours logged."
+            )
+
+            HStack(spacing: 0) {
+                ForEach(Array(mostPlayedGames.enumerated()), id: \.element.id) { index, game in
+                    Button {
+                        selectedGame = game
+                    } label: {
+                        VStack(spacing: 8) {
+                            Group {
+                                if let url = game.imageURL {
+                                    AsyncImage(url: url) { image in
+                                        image.resizable().scaledToFill()
+                                    } placeholder: {
+                                        Rectangle().fill(AppTheme.surfaceMuted)
+                                    }
+                                } else {
+                                    Image(game.imageName)
+                                        .resizable()
+                                        .scaledToFill()
+                                }
+                            }
+                            .frame(width: 88, height: 88)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(AppTheme.stroke, lineWidth: 1)
+                            )
+
+                            Text(game.title)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppTheme.textPrimary)
+                                .lineLimit(1)
+
+                            Text("\(mostPlayedHours[index])h")
+                                .font(.caption2)
+                                .foregroundStyle(AppTheme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.top, 4)
         }
     }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct EditProfileView: View {
     @Environment(\.dismiss) private var dismiss
@@ -7,12 +8,26 @@ struct EditProfileView: View {
     @State private var bio: String
     @State private var about: String
 
+    // Photo picker state
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var avatarImage: UIImage?
+
+    private let appStateService: AppStateServicing = AppStateService.shared
+
+    var currentUser: User?
     var onSave: (String, String, String) -> Void
 
-    init(currentUsername: String, currentBio: String, currentAbout: String, onSave: @escaping (String, String, String) -> Void) {
+    init(
+        currentUsername: String,
+        currentBio: String,
+        currentAbout: String,
+        currentUser: User? = nil,
+        onSave: @escaping (String, String, String) -> Void
+    ) {
         _username = State(initialValue: currentUsername)
         _bio = State(initialValue: currentBio)
         _about = State(initialValue: currentAbout)
+        self.currentUser = currentUser
         self.onSave = onSave
     }
 
@@ -28,6 +43,46 @@ struct EditProfileView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
 
+                    // MARK: - Avatar Picker
+                    HStack {
+                        Spacer()
+                        PhotosPicker(selection: $selectedItem, matching: .images) {
+                            ZStack(alignment: .bottomTrailing) {
+                                // Avatar image or placeholder
+                                Group {
+                                    if let avatarImage {
+                                        Image(uiImage: avatarImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                    } else {
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 40, weight: .semibold))
+                                            .foregroundStyle(AppTheme.accent)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    }
+                                }
+                                .frame(width: 100, height: 100)
+                                .background(AppTheme.surfaceMuted)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(AppTheme.stroke, lineWidth: 1))
+
+                                // Camera badge
+                                Circle()
+                                    .fill(AppTheme.accent)
+                                    .frame(width: 30, height: 30)
+                                    .overlay(
+                                        Image(systemName: "camera.fill")
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(.white)
+                                    )
+                                    .offset(x: 2, y: 2)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 4)
+
+                    // MARK: - Fields
                     AppSurface(fill: AppTheme.surfaceRaised) {
                         profileField(label: "Username") {
                             TextField("Enter username", text: $username)
@@ -72,6 +127,18 @@ struct EditProfileView: View {
                 }
             }
         }
+        .onAppear {
+            avatarImage = appStateService.loadAvatar(for: currentUser)
+        }
+        .onChange(of: selectedItem) { _, newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    avatarImage = image
+                    appStateService.saveAvatar(image, for: currentUser)
+                }
+            }
+        }
     }
 
     private func profileField<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
@@ -89,6 +156,10 @@ struct EditProfileView: View {
 
 #Preview {
     NavigationStack {
-        EditProfileView(currentUsername: "Hanson", currentBio: "Gamer. Competitive.", currentAbout: "Loves shooters and team games.") { _, _, _ in }
+        EditProfileView(
+            currentUsername: "Hanson",
+            currentBio: "Gamer. Competitive.",
+            currentAbout: "Loves shooters and team games."
+        ) { _, _, _ in }
     }
 }

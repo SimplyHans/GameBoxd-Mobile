@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 enum PlayerActivityCategory: String, CaseIterable, Codable {
     case sessions = "Sessions"
@@ -103,6 +104,9 @@ protocol AppStateServicing {
     func feedPosts(for user: User?, catalog: [HomeGame]) -> [PlayerFeedPost]
     func toggleLike(postID: UUID, for user: User?, catalog: [HomeGame]) -> [PlayerFeedPost]
     func badges(for user: User?, catalog: [HomeGame], favoriteIDs: Set<UUID>, recentIDs: [UUID]) -> [PlayerBadgeProgress]
+    // MARK: - Avatar
+    func saveAvatar(_ image: UIImage, for user: User?)
+    func loadAvatar(for user: User?) -> UIImage?
 }
 
 extension Notification.Name {
@@ -339,6 +343,27 @@ final class AppStateService: AppStateServicing {
             return lhs.isUnlocked && !rhs.isUnlocked
         }
     }
+
+    // MARK: - Avatar
+
+    func saveAvatar(_ image: UIImage, for user: User?) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        try? data.write(to: avatarURL(for: user))
+    }
+
+    func loadAvatar(for user: User?) -> UIImage? {
+        guard let data = try? Data(contentsOf: avatarURL(for: user)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    private func avatarURL(for user: User?) -> URL {
+        let uid = user?.id.uuidString ?? "guest"
+        return FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("avatar_\(uid).jpg")
+    }
+
+    // MARK: - Private helpers
 
     private func appendActivity(_ activity: PlayerActivityEntry, notification: PlayerNotificationItem?, for user: User?) {
         var state = loadState(for: user, createIfNeeded: true)
